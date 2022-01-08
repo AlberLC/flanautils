@@ -9,6 +9,8 @@ from flanautils import strings
 
 
 def resolve_path(path: str) -> pathlib.Path:
+    """Resolves actual file or directory paths in distributed libraries."""
+
     path = path.strip('/')
     try:
         path, file = path.rsplit('/', 1)
