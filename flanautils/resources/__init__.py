@@ -1,5 +1,6 @@
 import pathlib
 import pkgutil
 
-plotly_es_data = pkgutil.get_data(__package__, 'plotly_es.js')
-plotly_es_url = pathlib.Path(__package__).resolve() / 'plotly_es.js'
+RESOURCES_ABSOLUTE_PATH = pathlib.Path(pkgutil.resolve_name(__name__).__path__[0])
+
+plotly_es_url = RESOURCES_ABSOLUTE_PATH / 'plotly_es.js'

@@ -11,12 +11,20 @@ import sympy
 # noinspection PyProtectedMember
 from plotly.io import _html, _kaleido
 
-import resources
+import flanautils.resources
 from flanautils import iterables
 from flanautils.models.bases import FlanaBase
 
-_kaleido.scope.plotlyjs = resources.plotly_es_url  # render image
-_html.get_plotlyjs = resources.plotly_es_data  # render html
+
+def get_plotlyjs():
+    """Hardcode a version of plotly in Spanish to render html."""
+
+    with open(flanautils.resources.plotly_es_url) as f:
+        return f.read()
+
+
+_kaleido.scope.plotlyjs = flanautils.resources.plotly_es_url  # render image
+_html.get_plotlyjs = get_plotlyjs  # render html
 
 
 def find_resolution(func: Callable = None) -> Callable:
