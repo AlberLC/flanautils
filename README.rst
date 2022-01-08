@@ -20,7 +20,9 @@ Python 3.10 or higher is required.
     :alt: License
 
 .. |project_version| image:: https://img.shields.io/pypi/v/flanautils
+    :target: https://pypi.org/project/flanautils/
     :alt: PyPI
 
 .. |python_version| image:: https://img.shields.io/pypi/pyversions/flanautils
+    :target: https://www.python.org/downloads/
     :alt: PyPI - Python Version
