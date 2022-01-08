@@ -1,10 +1,22 @@
 import contextlib
 import os
 import pathlib
+import pkgutil
 import subprocess
 from contextlib import contextmanager
 
 from flanautils import strings
+
+
+def resolve_path(path: str) -> pathlib.Path:
+    path = path.strip('/')
+    try:
+        path, file = path.rsplit('/', 1)
+    except ValueError:
+        file = ''
+    path = path.replace('/', '.')
+
+    return pathlib.Path(pkgutil.resolve_name(path).__path__[0]) / file
 
 
 def set_windows_environment_variables(variables: str | dict | pathlib.Path, search_jsons=True, set_in_system=False):
