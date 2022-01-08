@@ -1,7 +1,6 @@
 from __future__ import annotations  # todo0 remove in 3.11
 
 import functools
-import pathlib
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable
 
@@ -12,20 +11,12 @@ import sympy
 # noinspection PyProtectedMember
 from plotly.io import _html, _kaleido
 
+import resources
 from flanautils import iterables
 from flanautils.models.bases import FlanaBase
 
-_kaleido.scope.plotlyjs = pathlib.Path('flanautils/resources/plotly_es.js').absolute()
-
-
-def get_plotlyjs():
-    """Hardcode a version of plotly in Spanish."""
-
-    with open('plotly_es.js') as f:
-        return f.read()
-
-
-_html.get_plotlyjs = get_plotlyjs
+_kaleido.scope.plotlyjs = resources.plotly_es_url  # render image
+_html.get_plotlyjs = resources.plotly_es_data  # render html
 
 
 def find_resolution(func: Callable = None) -> Callable:
