@@ -11,19 +11,18 @@ import sympy
 # noinspection PyProtectedMember
 from plotly.io import _html, _kaleido
 
-import flanautils.resources
-from flanautils import iterables
+from flanautils import iterables, oss
 from flanautils.models.bases import FlanaBase
 
 
 def get_plotlyjs():
     """Hardcode a version of plotly in Spanish to render html."""
 
-    with open(flanautils.resources.plotly_es_url) as f:
+    with open(oss.resolve_path('flanautils/resources/plotly_es.js')) as f:
         return f.read()
 
 
-_kaleido.scope.plotlyjs = flanautils.resources.plotly_es_url  # render image
+_kaleido.scope.plotlyjs = oss.resolve_path('flanautils/resources/plotly_es.js')  # render image
 _html.get_plotlyjs = get_plotlyjs  # render html
 
 
