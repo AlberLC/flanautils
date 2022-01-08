@@ -15,7 +15,7 @@ from plotly.io import _html, _kaleido
 from flanautils import iterables
 from flanautils.models.bases import FlanaBase
 
-_kaleido.scope.plotlyjs = pathlib.Path('resources/plotly_es.js').absolute()
+_kaleido.scope.plotlyjs = pathlib.Path('flanautils/resources/plotly_es.js').absolute()
 
 
 def get_plotlyjs():
