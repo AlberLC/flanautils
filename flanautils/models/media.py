@@ -1,23 +1,25 @@
 from __future__ import annotations  # todo0 remove in 3.11
 
+import itertools
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, overload
 
+from flanautils import iterables
 from flanautils.models.bases import FlanaBase
 from flanautils.models.enums import MediaType, Source
 
 
 @dataclass(unsafe_hash=True)
 class Media(FlanaBase):
-    url: str = None
-    bytes_: bytes = None
-    type_: MediaType = None
-    source: Source = None
-    title: str = None
-    author: str = None
-    album: str = None
-    song_info: Media = None
+    url: str | None = None
+    bytes_: bytes | None = None
+    type_: MediaType | None = None
+    source: Source | None = None
+    title: str | None = None
+    author: str | None = None
+    album: str | None = None
+    song_info: Media | None = None
 
     @overload
     def __init__(self, url: str = None, type_: MediaType = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
@@ -35,30 +37,23 @@ class Media(FlanaBase):
     def __init__(self, bytes_: bytes = None, url: str = None, type_: MediaType = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
         pass
 
-    def __init__(self, url: str = None, bytes_: bytes = None, type_: MediaType = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        main_ars = itertools.takewhile(lambda arg_: isinstance(arg_, str | bytes), args)
+        self.url = iterables.find(main_ars, str)
+        self.bytes_ = iterables.find(reversed(list(main_ars)), bytes)
 
-        match url, bytes_:
-            case [bytes(bytes_), str(url)]:
-                pass
-            case [bytes(), bytes(bytes_)]:
-                url = None
-            case [str() | bytes(), MediaType()]:
-                type_, source, title, author, album, song_info = bytes_, type_, source, title, author, album
-                match url:
-                    case str():
-                        bytes_ = None
-                    case bytes():
-                        url, bytes_ = None, url
+        rest_attributes_names = ('type_', 'source', 'title', 'author', 'album', 'song_info')
+        for attributes_name, arg in zip(rest_attributes_names, itertools.dropwhile(lambda arg_: isinstance(arg_, str | bytes), args)):
+            setattr(self, attributes_name, arg)
 
-        self.url = url
-        self.bytes_ = bytes_
-        self.type_ = type_
-        self.source = source
-        self.title = title
-        self.author = author
-        self.album = album
-        self.song_info = song_info
+        self.url = kwargs.get('url') or self.url
+        self.bytes_ = kwargs.get('bytes_') or self.bytes_
+        self.type_ = kwargs.get('type_') or self.type_
+        self.source = kwargs.get('source') or self.source
+        self.title = kwargs.get('title') or self.title
+        self.author = kwargs.get('author') or self.author
+        self.album = kwargs.get('album') or self.album
+        self.song_info = kwargs.get('song_info') or self.song_info
 
     def __bool__(self):
         return bool(self.content)

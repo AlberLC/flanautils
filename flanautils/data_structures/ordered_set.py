@@ -3,7 +3,8 @@ from __future__ import annotations  # todo0 remove in 3.11
 import itertools
 import json
 import math
-from typing import Any, Generic, Iterable, Iterator, MutableSet, Set, Type, TypeVar
+import pickle
+from typing import AbstractSet, Any, Generic, Iterable, Iterator, MutableSet, Type, TypeVar
 
 from flanautils import iterables
 from flanautils.models.bases import FlanaBase, JSONBASE
@@ -11,7 +12,7 @@ from flanautils.models.bases import FlanaBase, JSONBASE
 E = TypeVar('E')
 
 
-class OrderedSet(MutableSet, FlanaBase, Generic[E]):
+class OrderedSet(FlanaBase, MutableSet, Generic[E]):
     """
     Set that maintains the insertion order.
 
@@ -162,12 +163,8 @@ class OrderedSet(MutableSet, FlanaBase, Generic[E]):
     def __rsub__(self, other) -> OrderedSet[E]:
         return self.ordered_set_if_not_set(other) - self
 
-    @classmethod
-    def _json_decode_list(cls, obj: Any) -> OrderedSet:
-        return OrderedSet(cls._json_decode_str(e) for e in obj)
-
     def _json_repr(self) -> Any:
-        return [json.loads(element.to_json()) if isinstance(element, JSONBASE) else element for element in self]
+        return [json.loads(element.to_json()) if isinstance(element, JSONBASE) else pickle.dumps(element) for element in self]
 
     def positive_index(self, index_: int) -> int:
         if index_ < 0:
@@ -175,8 +172,8 @@ class OrderedSet(MutableSet, FlanaBase, Generic[E]):
         return index_
 
     @classmethod
-    def ordered_set_if_not_set(cls: Type[T], arg: Any) -> Set | T:
-        return arg if isinstance(arg, Set) else cls(iterables.flatten_iterator(arg))
+    def ordered_set_if_not_set(cls: Type[T], arg: Any) -> AbstractSet | T:
+        return arg if isinstance(arg, AbstractSet) else cls(iterables.flatten_iterator(arg))
 
     def add(self, element: Any):
         self._elements_dict[element] = None

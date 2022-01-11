@@ -10,7 +10,7 @@ import pprint
 import typing
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Iterable, Iterator, MutableSet, Sequence
+from typing import AbstractSet, Any, Iterable, Iterator, Sequence
 
 import pymongo.collection
 import pymongo.database
@@ -46,18 +46,6 @@ class CopyBase:
 class DictBase:
     """Base class for serialize objects to dict."""
 
-    @classmethod
-    def _dict_encode_enum(cls, obj) -> Any:
-        """Classmethod to represents enumerates in dictionaries."""
-
-        return obj
-
-    @classmethod
-    def _dict_encode_set(cls, obj) -> Any:
-        """Classmethod to represent sets in dictionaries."""
-
-        return obj
-
     def _dict_repr(self) -> Any:
         """
         Returns the dict representation of your object.
@@ -92,7 +80,7 @@ class DictBase:
                         continue
                     case dict(dict_) if issubclass(type_, DictBase) and not lazy:
                         new_data[k] = decode_dict(type_, dict_)
-                    case [*_] as list_ if not isinstance(list_, set) and type_origin and issubclass(type_origin, Iterable) and issubclass(value_type, DictBase) and not lazy:
+                    case [*_] as list_ if not isinstance(list_, set) and type_origin and type_origin is not typing.Union and issubclass(type_origin, Iterable) and issubclass(value_type, DictBase) and not lazy:
                         new_data[k] = [decode_dict(value_type, dict_) for dict_ in list_]
                     case bytes(bytes_) if type_ is not bytes:
                         new_data[k] = pickle.loads(bytes_)
@@ -101,8 +89,17 @@ class DictBase:
 
         return decode_dict(cls, data)
 
-    def to_dict(self) -> dict:
+    def to_dict(self, pickle_types: tuple | list = (Enum, AbstractSet), recursive=False) -> Any:
         """Returns the representation of the object as a dictionary."""
+
+        def encode_obj(obj_) -> Any:
+            # noinspection PyProtectedMember,PyUnresolvedReferences
+            if isinstance(obj_, pickle_types) and not obj_._dict_repr.__qualname__.startswith(obj_.__class__.__name__):
+                return pickle.dumps(obj_)
+            elif recursive:
+                return obj_.to_dict()
+            else:
+                return obj_
 
         if not isinstance(dict_repr := self._dict_repr(), dict):
             return dict_repr
@@ -110,55 +107,20 @@ class DictBase:
         self_vars = dict_repr.copy()
         for k, v in self_vars.items():
             match v:
-                case DictBase() as obj if not isinstance(obj, MutableSet):
-                    self_vars[k] = obj.to_dict()
-                case [*_, DictBase()] as objs if not isinstance(objs, MutableSet):
-                    self_vars[k] = [obj.to_dict() for obj in v]
-                case Enum() as obj:
-                    self_vars[k] = self._dict_encode_enum(obj)
-                case obj if isinstance(obj, MutableSet):
-                    self_vars[k] = self._dict_encode_set(obj)
+                case DictBase() as obj:
+                    self_vars[k] = encode_obj(obj)
+                case [*_, DictBase()] as objs:
+                    self_vars[k] = [encode_obj(obj) for obj in objs]
+                case obj if isinstance(obj, pickle_types):
+                    self_vars[k] = pickle.dumps(obj)
+                case [*_, obj] as objs if isinstance(obj, pickle_types):
+                    self_vars[k] = [encode_obj(obj) for obj in objs]
 
         return self_vars
 
 
 class JSONBASE:
     """Base class for serialize objects to json."""
-
-    @classmethod
-    def _json_decode_dict(cls, cls_: Any, dict_: dict) -> Any:
-        """Classmethod to decode JSON dictionaries to anything."""
-
-        kwargs = {}
-        for k, v in dict_.items():
-            k = cls._json_decode_str(k)
-            v = cls._json_decode_str(v)
-            if isinstance(v, dict):
-                try:
-                    v = cls._json_decode_dict(typing.get_type_hints(cls_)[k], v)
-                except KeyError:
-                    pass
-            kwargs[k] = v
-        return cls_(**kwargs)
-
-    @classmethod
-    def _json_decode_list(cls, obj: Any) -> Any:
-        """Classmethod to decode JSON lists to anything."""
-
-        return [cls._json_decode_str(e) for e in obj]
-
-    @classmethod
-    def _json_decode_str(cls, obj: Any) -> Any:
-        """Classmethod to decode JSON strings to anything."""
-
-        if not isinstance(obj, str):
-            return obj
-        try:
-            bytes_ = base64.b64decode(obj.encode(), validate=True)
-            decoded_obj = pickle.loads(bytes_)
-        except (binascii.Error, pickle.UnpicklingError, EOFError):
-            return obj
-        return decoded_obj
 
     def _json_repr(self) -> Any:
         """
@@ -173,37 +135,72 @@ class JSONBASE:
     def from_json(cls, text: str) -> Any:
         """Classmethod that constructs an object given a JSON string."""
 
+        def decode_str(obj_: Any) -> Any:
+            """Inner function to decode JSON strings to anything."""
+
+            if not isinstance(obj_, str):
+                return obj_
+            try:
+                bytes_ = base64.b64decode(obj_.encode(), validate=True)
+                decoded_obj = pickle.loads(bytes_)
+            except (binascii.Error, pickle.UnpicklingError, EOFError):
+                return obj_
+            return decoded_obj
+
+        def decode_list(obj_: Any) -> Any:
+            """Inner function to decode JSON lists to anything."""
+
+            return [decode_str(e) for e in obj_]
+
+        def decode_dict(cls_: Any, dict_: dict) -> Any:
+            """Inner function to decode JSON dictionaries to anything."""
+
+            kwargs = {}
+            for k, v in dict_.items():
+                k = decode_str(k)
+                v = decode_str(v)
+                if isinstance(v, dict):
+                    try:
+                        v = decode_dict(typing.get_type_hints(cls_)[k], v)
+                    except KeyError:
+                        pass
+                kwargs[k] = v
+            return cls_(**kwargs)
+
         if not isinstance(text, str):
             raise TypeError(f'must be str, not {type(text).__name__}')
 
         obj = json.loads(text)
         if isinstance(obj, str):
-            return cls._json_decode_str(obj)
+            return decode_str(obj)
         elif isinstance(obj, list):
-            return cls._json_decode_list(obj)
+            return decode_list(obj)
         elif isinstance(obj, dict):
-            return cls._json_decode_dict(cls, obj)
+            return decode_dict(cls, obj)
         else:
             return obj
 
-    def to_json(self, indent: int = None) -> str:
+    def to_json(self, pickle_types: tuple | list = (Enum,), indent: int = None) -> str:
         """Returns the representation of the object as a JSON string."""
 
+        # noinspection PyProtectedMember,PyUnresolvedReferences
         def json_encoder(obj: Any) -> Any:
             if isinstance(obj, bytes):
                 return base64.b64encode(obj).decode()
 
             match obj:
-                case set():
+                case obj if isinstance(obj, AbstractSet):
                     return list(obj)
                 case JSONBASE():
-                    # noinspection PyProtectedMember
-                    return obj._json_repr()
+                    if isinstance(obj, pickle_types) and not obj._json_repr.__qualname__.startswith(obj.__class__.__name__):
+                        return pickle.dumps(obj)
+                    else:
+                        return obj._json_repr()
                 case (datetime.date() | datetime.datetime()) as date_time:
                     return str(date_time)
                 case _:
                     try:
-                        return json.dumps(obj)
+                        return json.dumps(obj, indent=indent)
                     except TypeError:
                         return repr(obj)
 
@@ -273,7 +270,7 @@ class MeanBase:
         return cls(**attribute_values)
 
 
-class _MongoBase(DictBase, BytesBase):
+class MongoBase(DictBase, BytesBase):
     """
     Base class for mapping objects to mongo documents and vice versa (Object Document Mapper).
 
@@ -308,7 +305,7 @@ class _MongoBase(DictBase, BytesBase):
         self._create_unique_indices()
 
     def __post_init__(self):
-        _MongoBase.__init__(self)
+        MongoBase.__init__(self)
 
     def __bytes__(self):
         return pickle.dumps(self.to_dict())
@@ -337,9 +334,9 @@ class _MongoBase(DictBase, BytesBase):
             return value
 
         match value:
-            case ObjectId() as object_id if issubclass(type_, _MongoBase):
+            case ObjectId() as object_id if issubclass(type_, MongoBase):
                 value = type_.find_one({'_id': object_id})
-            case [*_, ObjectId()] as object_ids if type_arg := iterables.find(typing.get_args(type_), _MongoBase):
+            case [*_, ObjectId()] as object_ids if type_arg := iterables.find(typing.get_args(type_), MongoBase):
                 value = [result for object_id in object_ids if (result := type_arg.find_one({'_id': object_id}))]
             case _:
                 return value
@@ -347,17 +344,11 @@ class _MongoBase(DictBase, BytesBase):
         super().__setattr__(attribute_name, value)
         return value
 
-    def __getstate__(self):
-        return self.to_dict()
-
     def __hash__(self):
         if unique_attributes := self.unique_attributes:
             return hash(tuple(unique_attributes.values()))
         else:
             return hash(self._id)
-
-    def __setstate__(self, state):
-        self.__dict__ = vars(self.from_dict(state, lazy=False))
 
     def _create_unique_indices(self):
         """Create the unique indices in the database based on _unique_keys and _nullable_unique_keys attributes."""
@@ -380,14 +371,6 @@ class _MongoBase(DictBase, BytesBase):
         self_vars['_id'] = repr(self_vars['_id'])
 
         return {k: v for k, v in self_vars.items() if k not in ('_database', '_unique_keys', '_nullable_unique_keys', 'collection')}
-
-    @classmethod
-    def _mongo_encode_enum(cls, obj) -> Any:
-        return pickle.dumps(obj)
-
-    @classmethod
-    def _mongo_encode_set(cls, obj) -> Any:
-        return pickle.dumps(obj)
 
     def _mongo_repr(self) -> Any:
         """Returns the object representation to save in mongo database."""
@@ -433,7 +416,7 @@ class _MongoBase(DictBase, BytesBase):
             return [cls.from_dict(document) for document in cursor]
 
     @classmethod
-    def find_one(cls, query: dict = None, sort_keys: str | Iterable[str | tuple[str, int]] = ()) -> _MongoBase | None:
+    def find_one(cls, query: dict = None, sort_keys: str | Iterable[str | tuple[str, int]] = ()) -> MongoBase | None:
         """Query the collection and return the first match."""
 
         return next(cls.find(query, sort_keys, lazy=True), None)
@@ -448,16 +431,16 @@ class _MongoBase(DictBase, BytesBase):
     def from_bytes(cls, bytes_: bytes) -> Any:
         return cls.from_dict(super().from_bytes(bytes_))
 
-    def get_referenced_objects(self) -> list[_MongoBase]:
+    def get_referenced_objects(self) -> list[MongoBase]:
         """Returns all referenced objects whose classes inherit from _MongoBase."""
 
         referenced_objects = []
         for k, v in vars(self).items():
             match v:
-                case _MongoBase() as obj:
+                case MongoBase() as obj:
                     referenced_objects.append(obj)
-                case [*_, _MongoBase()] as objs:
-                    referenced_objects.extend(obj for obj in objs if isinstance(obj, _MongoBase))
+                case [*_, MongoBase()] as objs:
+                    referenced_objects.extend(obj for obj in objs if isinstance(obj, MongoBase))
 
         return referenced_objects
 
@@ -481,7 +464,7 @@ class _MongoBase(DictBase, BytesBase):
             if all(unique_attributes.values()):
                 query = {}
                 for k, v in unique_attributes.items():
-                    if isinstance(v, _MongoBase):
+                    if isinstance(v, MongoBase):
                         v.pull_from_database(exclude=exclude, database_priority=database_priority)
                         v = v._id
                     query[k] = v
@@ -503,18 +486,21 @@ class _MongoBase(DictBase, BytesBase):
         for k in vars(self):
             getattr(self, k)
 
-    def save(self, pull_exclude: Iterable[str] = (), pull_database_priority=False, references=True):
+    def save(self, pickle_types: tuple | list = (Enum, AbstractSet), pull_exclude: Iterable[str] = (), pull_database_priority=False, references=True):
         """
         Save (insert or update) the current object in the database.
 
         If references=True it saves the objects without redundancy (_MongoBase -> ObjectId).
         """
 
+        if not self.collection:
+            return
+
         self.pull_from_database(exclude=pull_exclude, database_priority=pull_database_priority)
         for referenced_object in self.get_referenced_objects():
-            referenced_object.save(pull_exclude, pull_database_priority, references)
+            referenced_object.save(pickle_types, pull_exclude, pull_database_priority, references)
 
-        data = self.to_mongo()
+        data = self.to_mongo(pickle_types)
 
         if references:
             for k, v in data.items():
@@ -526,23 +512,30 @@ class _MongoBase(DictBase, BytesBase):
 
         self.collection.find_one_and_update({'_id': self._id}, {'$set': data}, upsert=True)
 
-    def to_mongo(self) -> dict:
+    def to_mongo(self, pickle_types: tuple | list = (Enum, AbstractSet)) -> Any:
         """Returns the representation of the object as a mongo compatible dictionary."""
 
-        if not isinstance(dict_repr := self._mongo_repr(), dict):
-            return dict_repr
+        def encode_obj(obj_) -> Any:
+            # noinspection PyProtectedMember,PyUnresolvedReferences
+            if isinstance(obj_, pickle_types) and not obj_._mongo_repr.__qualname__.startswith(obj_.__class__.__name__):
+                return pickle.dumps(obj_)
+            else:
+                return obj_.to_mongo()
 
-        self_vars = dict_repr.copy()
+        if not isinstance(mongo_repr := self._mongo_repr(), dict):
+            return mongo_repr
+
+        self_vars = mongo_repr.copy()
         for k, v in self_vars.items():
             match v:
-                case MongoBase() as obj if not isinstance(obj, MutableSet):
-                    self_vars[k] = obj.to_mongo()
-                case [*_, MongoBase()] as objs if not isinstance(objs, MutableSet):
-                    self_vars[k] = [obj.to_mongo() for obj in v]
-                case Enum() as obj:
-                    self_vars[k] = self._mongo_encode_enum(obj)
-                case obj if isinstance(obj, MutableSet):
-                    self_vars[k] = self._mongo_encode_set(obj)
+                case MongoBase() as obj:
+                    self_vars[k] = encode_obj(obj)
+                case [*_, MongoBase()] as objs:
+                    self_vars[k] = [encode_obj(obj) for obj in objs]
+                case obj if isinstance(obj, pickle_types):
+                    self_vars[k] = pickle.dumps(obj)
+                case [*_, obj] as objs if isinstance(obj, pickle_types):
+                    self_vars[k] = [encode_obj(obj) for obj in objs]
 
         return self_vars
 
@@ -557,14 +550,14 @@ class _MongoBase(DictBase, BytesBase):
 
 
 @dataclass(eq=False)
-class MongoBase(_MongoBase):
+class DCMongoBase(MongoBase):
     """Base class to be inherited by an unfrozen dataclass."""
 
     _id: ObjectId = field(kw_only=True, default_factory=ObjectId)
 
 
 @dataclass(eq=False, frozen=True)
-class FrozenMongoBase(_MongoBase):
+class FrozenDCMongoBase(MongoBase):
     """Base class to be inherited by a frozen dataclass."""
 
     _id: ObjectId = field(kw_only=True, default_factory=ObjectId)
@@ -596,9 +589,6 @@ class FlanaEnum(JSONBASE, DictBase, CopyBase, BytesBase, Enum):
 
     def _json_repr(self) -> Any:
         return bytes(self)
-
-    def _mongo_repr(self) -> Any:
-        return pickle.dumps(self)
 
     @classmethod
     @property
