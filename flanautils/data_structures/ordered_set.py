@@ -135,7 +135,7 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
         else:
             raise TypeError('indices must be integers or slices')
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[E]:
         return iter(self._elements_dict)
 
     def __len__(self) -> int:
@@ -150,7 +150,7 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
     def __repr__(self) -> str:
         return str(self)
 
-    def __reversed__(self) -> Iterator:
+    def __reversed__(self) -> Iterator[E]:
         return reversed(self._elements_dict)
 
     def __str__(self) -> str:
@@ -178,7 +178,7 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
     def add(self, element: Any):
         self._elements_dict[element] = None
 
-    def add_many(self, elements: Iterable[Any]):
+    def add_many(self, elements: Iterable):
         for element in elements:
             self.add(element)
 
@@ -206,7 +206,7 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
         except TypeError:
             pass
 
-    def discard_many(self, elements: Iterable[Any]):
+    def discard_many(self, elements: Iterable):
         for element in elements:
             self.discard(element)
 

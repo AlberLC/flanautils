@@ -38,9 +38,9 @@ class Media(FlanaBase):
         pass
 
     def __init__(self, *args, **kwargs):
-        main_ars = itertools.takewhile(lambda arg_: isinstance(arg_, str | bytes), args)
+        main_ars = list(itertools.takewhile(lambda arg_: isinstance(arg_, str | bytes), args))
         self.url = iterables.find(main_ars, str)
-        self.bytes_ = iterables.find(reversed(list(main_ars)), bytes)
+        self.bytes_ = iterables.find(reversed(main_ars), bytes)
 
         rest_attributes_names = ('type_', 'source', 'title', 'author', 'album', 'song_info')
         for attributes_name, arg in zip(rest_attributes_names, itertools.dropwhile(lambda arg_: isinstance(arg_, str | bytes), args)):
