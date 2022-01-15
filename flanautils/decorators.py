@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import inspect
 import timeit
 from typing import Any, Callable, Iterable, Type
 
@@ -12,14 +13,14 @@ from flanautils import iterables
 def shift_args_if_called(func_: Callable = None, *, exclude_self_types: str | Type | Iterable[str | Type] = (), globals_: dict = None) -> Callable:
     """Decorator for decorators that shifts the arguments depending on whether the decorator is called or not."""
 
-    if func_ is not None and not callable(func_):
+    if func_ is not None and not inspect.isfunction(func_) and not inspect.ismethod(func_):
         func_, exclude_self_types, globals_ = iterables.shift_function_args(func_, exclude_self_types, globals_, func=shift_args_if_called)
 
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             self, args = iterables.separate_self_from_args(args, exclude_self_types, globals_)
-            if args and args[0] is not None and not callable(args[0]):
+            if args and args[0] is not None and not inspect.isfunction(args[0]) and not inspect.ismethod(args[0]):
                 args = iterables.shift_function_args(*args, func=func)
 
             if self:
