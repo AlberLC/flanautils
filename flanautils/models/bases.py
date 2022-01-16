@@ -493,7 +493,7 @@ class MongoBase(DictBase, BytesBase):
         If references=True it saves the objects without redundancy (_MongoBase -> ObjectId).
         """
 
-        if not self.collection:
+        if self.collection is None:
             return
 
         self.pull_from_database(exclude=pull_exclude, database_priority=pull_database_priority)
