@@ -41,7 +41,7 @@ def find_environment_variables(text: str | pathlib.Path) -> dict:
     """Looks for environment variables in the text in .env format (key=value)."""
 
     # noinspection PyTypeChecker
-    return dict(line.split('=', maxsplit=1) for line in path_to_text(text).splitlines() if '=' in line)
+    return dict(line.split('=', maxsplit=1) for original_line in path_to_text(text).splitlines() if '=' in (line := original_line.strip()) and not line.startswith('#'))
 
 
 def join_last_separator(elements: Iterable, separator: str, last_separator: str, final_char='') -> str:
