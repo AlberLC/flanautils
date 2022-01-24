@@ -1,5 +1,4 @@
 import datetime
-import difflib
 import json
 import pathlib
 import random
@@ -7,7 +6,9 @@ import re
 import secrets
 import string
 import unicodedata
-from typing import Iterable, Sequence, Type, overload
+from typing import Iterable, Type, overload
+
+import jellyfish
 
 from flanautils import constants
 from flanautils.models.ratio_match import RatioMatch
@@ -21,7 +22,7 @@ def cartesian_product_string_matching(a_text: str | Iterable[str], b_text: str |
 
     a_words = a_text.split() if isinstance(a_text, str) else a_text
     b_words = b_text.split() if isinstance(b_text, str) else b_text
-    return {a_word: matches for a_word in a_words if (matches := {b_word: ratio for b_word in b_words if (ratio := matching_ratio(a=a_word, b=b_word)) >= min_ratio})}
+    return {a_word: matches for a_word in a_words if (matches := {b_word: ratio for b_word in b_words if (ratio := jellyfish.jaro_winkler_similarity(a_word, b_word)) >= min_ratio})}
 
 
 def find_jsons(text: str) -> list[dict]:
@@ -61,29 +62,6 @@ def join_last_separator(elements: Iterable, separator: str, last_separator: str,
     if len(elements) == 1:
         return f'{elements[0]}{final_char}'
     return f'{separator.join(elements[:-1])}{last_separator}{elements[-1]}{final_char}'
-
-
-def matching_ratio(a: Sequence[str], b: Sequence[str], original_index_weight=0.8, custom_index_weight=0.2) -> float:
-    """
-    Compare two sequences and return the score.
-
-    It is made up of two different indices. The first uses difflib.SequenceMatcher and the second, a custom one that
-    obtains a ratio of equal elements over the total number of elements.
-
-    The weights of both indices can be configured by arguments.
-    """
-
-    if custom_index_weight > 0:
-        match_count = 0
-        i = None
-        for i, (a_element, b_element) in enumerate(zip(a, b), start=1):
-            if a_element == b_element:
-                match_count += 1
-        custom_matching_ratio = match_count / i if i else 0.5
-    else:
-        custom_matching_ratio = 0
-
-    return original_index_weight * difflib.SequenceMatcher(a=a, b=b).ratio() + custom_index_weight * custom_matching_ratio
 
 
 def numbers_to_words(number: int, language='es') -> str:
@@ -305,13 +283,13 @@ def words_to_numbers(text: str, ignore_no_numbers=True, language='es') -> int:
         n = 0
         sign_ = 1
         for word in words:
-            if matching_ratio(a=word, b=number_words_es['-']) >= constants.NUMBERS_RATIO_MATCHING:
+            if jellyfish.jaro_winkler_similarity(word, number_words_es['-']) >= constants.NUMBERS_RATIO_MATCHING:
                 sign_ = -1
                 continue
 
             word_possible_matches = []
             for number_word in number_words_es.values():
-                ratio = matching_ratio(a=word, b=number_word)
+                ratio = jellyfish.jaro_winkler_similarity(word, number_word)
                 if ratio >= constants.NUMBERS_RATIO_MATCHING:
                     word_possible_matches.append(RatioMatch(number_words_es[number_word], ratio))
 
@@ -337,25 +315,25 @@ def words_to_time(text: str, language='es') -> datetime.timedelta:
         delta_time = datetime.timedelta()
         n = 0
         for word in text.split():
-            if matching_ratio(a=word, b='segundo') >= constants.TIME_UNITS_RATIO_MATCHING:
+            if jellyfish.jaro_winkler_similarity(word, 'segundo') >= constants.TIME_UNITS_RATIO_MATCHING:
                 delta_time += datetime.timedelta(seconds=n)
                 n = 0
-            elif matching_ratio(a=word, b='minuto') >= constants.TIME_UNITS_RATIO_MATCHING or matching_ratio(a=word, b='min') >= constants.TIME_UNITS_RATIO_MATCHING:
+            elif jellyfish.jaro_winkler_similarity(word, 'minuto') >= constants.TIME_UNITS_RATIO_MATCHING or jellyfish.jaro_winkler_similarity(word, 'min') >= constants.TIME_UNITS_RATIO_MATCHING:
                 delta_time += datetime.timedelta(minutes=n)
                 n = 0
-            elif matching_ratio(a=word, b='hora') >= constants.TIME_UNITS_RATIO_MATCHING:
+            elif jellyfish.jaro_winkler_similarity(word, 'hora') >= constants.TIME_UNITS_RATIO_MATCHING:
                 delta_time += datetime.timedelta(hours=n)
                 n = 0
-            elif matching_ratio(a=word, b='dia') >= constants.TIME_UNITS_RATIO_MATCHING:
+            elif jellyfish.jaro_winkler_similarity(word, 'dia') >= constants.TIME_UNITS_RATIO_MATCHING:
                 delta_time += datetime.timedelta(days=n)
                 n = 0
-            elif matching_ratio(a=word, b='semana') >= constants.TIME_UNITS_RATIO_MATCHING:
+            elif jellyfish.jaro_winkler_similarity(word, 'semana') >= constants.TIME_UNITS_RATIO_MATCHING:
                 delta_time += datetime.timedelta(weeks=n)
                 n = 0
-            elif matching_ratio(a=word, b='mes') >= constants.TIME_UNITS_RATIO_MATCHING:
+            elif jellyfish.jaro_winkler_similarity(word, 'mes') >= constants.TIME_UNITS_RATIO_MATCHING:
                 delta_time += datetime.timedelta(weeks=n * 4.34524)
                 n = 0
-            elif matching_ratio(a=word, b='año') >= constants.TIME_UNITS_RATIO_MATCHING:
+            elif jellyfish.jaro_winkler_similarity(word, 'año') >= constants.TIME_UNITS_RATIO_MATCHING:
                 delta_time += datetime.timedelta(weeks=n * 52.1429)
                 n = 0
             else:
