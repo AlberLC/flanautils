@@ -14,8 +14,8 @@ NUMBER_WORDS = {
         100: 'cien'
     })
 }
-NUMBERS_RATIO_MATCHING = 0.65
-TIME_UNITS_RATIO_MATCHING = 0.75
+NUMBERS_RATIO_MATCHING = 0.9
+TIME_UNITS_RATIO_MATCHING = 0.9
 WEEKS_IN_A_MONTH = 4.34524
 SYMBOLS = ('!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '[',
            '\\', ']', '^', '_', '`', '{', '|', '}', '~', '¡', '¨', 'ª', '¬', '´', '·', 'º', '¿', '€')
