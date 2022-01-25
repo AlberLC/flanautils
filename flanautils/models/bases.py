@@ -104,6 +104,7 @@ class DictBase:
         if not isinstance(dict_repr := self._dict_repr(), dict):
             return dict_repr
 
+        # noinspection DuplicatedCode
         self_vars = dict_repr.copy()
         for k, v in self_vars.items():
             match v:
@@ -448,7 +449,7 @@ class MongoBase(DictBase, BytesBase):
     def object_id(self):
         return self._id
 
-    def pull_from_database(self, query: dict = None, exclude: Iterable[str] = (), database_priority=False):
+    def pull_from_database(self, query: dict = None, overwrite_fields: Iterable[str] = ()):
         """
         Updates the values of the current object with the values of the same object located in the database.
 
@@ -465,7 +466,7 @@ class MongoBase(DictBase, BytesBase):
                 query = {}
                 for k, v in unique_attributes.items():
                     if isinstance(v, MongoBase):
-                        v.pull_from_database(exclude=exclude, database_priority=database_priority)
+                        v.pull_from_database(overwrite_fields=overwrite_fields)
                         v = v._id
                     query[k] = v
             else:
@@ -473,11 +474,8 @@ class MongoBase(DictBase, BytesBase):
 
         if document := self.collection.find_one(query):
             for database_key, database_value in vars(self.from_dict(document)).items():
-                if database_key in exclude:
-                    continue
-
                 self_value = getattr(self, database_key)
-                if self_value is None or (database_priority and database_value is not None) or database_key == '_id':
+                if self_value is None or (database_key in overwrite_fields and database_value is not None) or database_key == '_id':
                     super().__setattr__(database_key, database_value)
 
     def resolve(self):
@@ -486,7 +484,7 @@ class MongoBase(DictBase, BytesBase):
         for k in vars(self):
             getattr(self, k)
 
-    def save(self, pickle_types: tuple | list = (Enum, AbstractSet), pull_exclude: Iterable[str] = (), pull_database_priority=False, references=True):
+    def save(self, pickle_types: tuple | list = (Enum, AbstractSet), pull_overwrite_fields: Iterable[str] = (), references=True):
         """
         Save (insert or update) the current object in the database.
 
@@ -496,9 +494,9 @@ class MongoBase(DictBase, BytesBase):
         if self.collection is None:
             return
 
-        self.pull_from_database(exclude=pull_exclude, database_priority=pull_database_priority)
+        self.pull_from_database(overwrite_fields=pull_overwrite_fields)
         for referenced_object in self.get_referenced_objects():
-            referenced_object.save(pickle_types, pull_exclude, pull_database_priority, references)
+            referenced_object.save(pickle_types, pull_overwrite_fields, references)
 
         data = self.to_mongo(pickle_types)
 
@@ -525,6 +523,7 @@ class MongoBase(DictBase, BytesBase):
         if not isinstance(mongo_repr := self._mongo_repr(), dict):
             return mongo_repr
 
+        # noinspection DuplicatedCode
         self_vars = mongo_repr.copy()
         for k, v in self_vars.items():
             match v:
