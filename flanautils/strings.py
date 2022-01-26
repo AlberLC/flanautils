@@ -68,7 +68,7 @@ def find_coordinates(text: str) -> tuple[float, float] | list[tuple[float, float
     for result in results:
         try:
             words = re.split(r'[,;\s+]+', result)
-            latitude, longitude = iterables.find_all(words, condition=lambda e: isinstance(e, int | float), cast_numbers=True)
+            latitude, longitude = iterables.filter(words, condition=lambda e: isinstance(e, int | float), cast_numbers=True)
         except ValueError:
             continue
         formatted_results.append((float(latitude), float(longitude)))

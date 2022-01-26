@@ -5,6 +5,52 @@ from typing import Any, Callable, Iterable, Iterator, Type, overload
 from flanautils import maths, strings
 
 
+# noinspection PyShadowingNames,PyShadowingBuiltins
+def filter(elements: Iterable, target: Any = None, condition: Callable[..., bool] = None, cast_numbers=False, lazy=False) -> Iterator | list:
+    """
+    Smart function that find anything in an iterable (classes, objects, ...).
+
+    If condition is not None, return the all elements that matches it.
+
+    >>> elements = [1, 2, '3', 4, 'hola', '6.6']
+
+    >>> filter(elements, 2)
+    [2]
+    >>> filter(elements, int)
+    [1, 2, 4]
+    >>> filter(elements, float)
+    []
+    >>> filter(elements, 6.6, cast_numbers=True)
+    [6.6]
+    >>> import numbers # Python Standard Library
+    >>> filter(elements, numbers.Real, cast_numbers=True)
+    [1, 2, 3, 4, 6.6]
+    >>> filter(elements, condition=lambda e: isinstance(e, int | float), cast_numbers=True)
+    [1, 2, 3, 4, 6.6]
+    >>> type(filter(elements, numbers.Real, cast_numbers=True, lazy=True))
+    <class 'generator'>
+    >>> list(filter(elements, numbers.Real, cast_numbers=True, lazy=True))
+    [1, 2, 3, 4, 6.6]
+    """
+
+    if condition is None:
+        if isinstance(target, type) or isinstance(typing.get_origin(target), type | type(typing.Union)):
+            def condition(element: Any) -> bool:
+                try:
+                    return issubclass(element, target)
+                except TypeError:
+                    return isinstance(element, target)
+        else:
+            def condition(element: Any) -> bool:
+                return element == target
+
+    generator_ = (final_element for element in elements if condition(final_element := strings.cast_number(element, raise_exception=False) if cast_numbers else element))
+    if lazy:
+        return generator_
+    else:
+        return list(generator_)
+
+
 def filter_exceptions(elements: Iterable) -> tuple[list, list[BaseException]]:
     """Filters the exceptions of the iterable and returns a tuple with the separated results."""
 
@@ -43,53 +89,7 @@ def find(elements: Iterable, target: Any = None, condition: Callable[..., bool] 
     6.6
     """
 
-    return next(find_all(elements, target, condition, cast_numbers, lazy=True), None)
-
-
-# noinspection PyShadowingNames
-def find_all(elements: Iterable, target: Any = None, condition: Callable[..., bool] = None, cast_numbers=False, lazy=False) -> Iterator | list:
-    """
-    Smart function that find anything in an iterable (classes, objects, ...).
-
-    If condition is not None, return the all elements that matches it.
-
-    >>> elements = [1, 2, '3', 4, 'hola', '6.6']
-
-    >>> find_all(elements, 2)
-    [2]
-    >>> find_all(elements, int)
-    [1, 2, 4]
-    >>> find_all(elements, float)
-    []
-    >>> find_all(elements, 6.6, cast_numbers=True)
-    [6.6]
-    >>> import numbers # Python Standard Library
-    >>> find_all(elements, numbers.Real, cast_numbers=True)
-    [1, 2, 3, 4, 6.6]
-    >>> find_all(elements, condition=lambda e: isinstance(e, int | float), cast_numbers=True)
-    [1, 2, 3, 4, 6.6]
-    >>> type(find_all(elements, numbers.Real, cast_numbers=True, lazy=True))
-    <class 'generator'>
-    >>> list(find_all(elements, numbers.Real, cast_numbers=True, lazy=True))
-    [1, 2, 3, 4, 6.6]
-    """
-
-    if condition is None:
-        if isinstance(target, type) or isinstance(typing.get_origin(target), type | type(typing.Union)):
-            def condition(element: Any) -> bool:
-                try:
-                    return issubclass(element, target)
-                except TypeError:
-                    return isinstance(element, target)
-        else:
-            def condition(element: Any) -> bool:
-                return element == target
-
-    generator_ = (final_element for element in elements if condition(final_element := strings.cast_number(element, raise_exception=False) if cast_numbers else element))
-    if lazy:
-        return generator_
-    else:
-        return list(generator_)
+    return next(filter(elements, target, condition, cast_numbers, lazy=True), None)
 
 
 def flatten_iterator(*args: Iterable, depth=None) -> Iterator:
