@@ -10,7 +10,7 @@ from typing import Iterable, Type, overload
 
 import jellyfish
 
-from flanautils import constants
+from flanautils import constants, iterables
 from flanautils.models.ratio_match import RatioMatch
 
 
@@ -23,6 +23,61 @@ def cartesian_product_string_matching(a_text: str | Iterable[str], b_text: str |
     a_words = a_text.split() if isinstance(a_text, str) else a_text
     b_words = b_text.split() if isinstance(b_text, str) else b_text
     return {a_word: matches for a_word in a_words if (matches := {b_word: ratio for b_word in b_words if (ratio := jellyfish.jaro_winkler_similarity(a_word, b_word)) >= min_ratio})}
+
+
+def cast_number(text: str, raise_exception=True) -> int | float | str:
+    """
+    Try to cast a string to a number.
+
+    If raise_exception=False (True by default), returns the input as it is.
+    """
+
+    try:
+        return int(text)
+    except ValueError:
+        try:
+            return float(text)
+        except ValueError:
+            if raise_exception:
+                raise
+            else:
+                return text
+
+
+def find_coordinates(text: str) -> tuple[float, float] | list[tuple[float, float]] | None:
+    """
+    Find coordinates in string.
+
+    - If one pair of numbers are matched, returns (latitude, longitude)
+    - If more of one pair of numbers are matched, returns [(latitude, longitude), ...]
+    - If not match, returns None
+
+    >>> find_coordinates('holaaaa 85.1, 44.3515')
+    (85.1, 44.3515)
+    >>> find_coordinates('ey que pasa+654.1464;,;+ + +-456.4164hola')
+    (654.1464, -456.4164)
+    >>> find_coordinates('ey que pasa+654.1464;,;+ + -+456.4164hola    40+5.5')
+    [(654.1464, 456.4164), (40.0, 5.5)]
+    >>> find_coordinates('ey que pasa')
+
+    """
+
+    results = re.findall(r'[-+\d.]+[,;\s+-]+[-+\d.]+', translate(text, {'-': ' -', '+': ' +'}))
+
+    formatted_results = []
+    for result in results:
+        try:
+            words = re.split(r'[,;\s+]+', result)
+            latitude, longitude = iterables.find_all(words, condition=lambda e: isinstance(e, int | float), cast_numbers=True)
+        except ValueError:
+            continue
+        formatted_results.append((float(latitude), float(longitude)))
+
+    match formatted_results:
+        case [single]:
+            return single
+        case [_, *_]:
+            return formatted_results
 
 
 def find_jsons(text: str) -> list[dict]:
