@@ -9,7 +9,7 @@ import test_utils
 from data_structures.ordered_set import OrderedSet
 from decorators import repeat
 
-REPEAT_TIMES = 1000
+REPEAT_TIMES = 500
 
 
 class TestOrderedSet(unittest.TestCase):
