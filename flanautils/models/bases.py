@@ -232,6 +232,7 @@ class MeanBase:
         elif len(ratios) != len(objects):
             raise ValueError('Wrong ratios length')
 
+        # ----- updates the ratios depending on empty attributes -----
         attributes_ratios = {}
         attributes_ratios_length = {}
         for attribute_name in attribute_names:
@@ -244,10 +245,10 @@ class MeanBase:
                         ratio_part_to_add = attributes_ratios[attribute_name][object_index] / attributes_ratios_length[attribute_name]
                     except ZeroDivisionError:
                         ratio_part_to_add = 0
-                    for ratio_index, _ in enumerate(attributes_ratios[attribute_name]):
-                        if ratio_index != object_index:
-                            attributes_ratios[attribute_name][ratio_index] += ratio_part_to_add
                     attributes_ratios[attribute_name][object_index] = 0
+                    for ratio_index, _ in enumerate(attributes_ratios[attribute_name]):
+                        if attributes_ratios[attribute_name][ratio_index]:
+                            attributes_ratios[attribute_name][ratio_index] += ratio_part_to_add
 
         attribute_values = {}
         timezone: datetime.timezone | None = None
