@@ -476,7 +476,23 @@ class MongoBase(DictBase, BytesBase):
         if document := self.collection.find_one(query):
             for database_key, database_value in vars(self.from_dict(document)).items():
                 self_value = getattr(self, database_key)
-                if self_value is None or (database_key in overwrite_fields and database_value is not None) or database_key == '_id':
+                if (
+                        self_value is None
+                        or
+                        (
+                                isinstance(self_value, Iterable)
+                                and not
+                                isinstance(self_value, pymongo.collection.Collection)  # https://www.mongodb.com/community/forums/t/collection-is-defined-like-iterable-but-actually-isnt/134683/1
+                                and not
+                                isinstance(self_value, pymongo.database.Database)  # https://www.mongodb.com/community/forums/t/collection-is-defined-like-iterable-but-actually-isnt/134683/1
+                                and not
+                                self_value
+                        )
+                        or
+                        (database_key in overwrite_fields and database_value is not None)
+                        or
+                        database_key == '_id'
+                ):
                     super().__setattr__(database_key, database_value)
 
     def resolve(self):
