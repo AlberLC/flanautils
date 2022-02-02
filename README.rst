@@ -16,8 +16,6 @@ Python 3.10 or higher is required.
 
     pip install flanautils
 
-|
-
 Features
 --------
 
@@ -30,8 +28,6 @@ Data structures
 - OrderedSet:
     A set that maintains the insertion order and implements all the methods of set and list, although since it is a structure based on hashes the traversal of all the elements and the use of Sequence-based functions (tuple, list, etc.) aren't efficient.
 
-|
-
 Models
 ~~~~~~
 - Base class for serialize to bytes
@@ -42,8 +38,6 @@ Models
 - Base class for enums
 - Plotly classes
 - etc.
-
-|
 
 Functions
 ~~~~~~~~~
