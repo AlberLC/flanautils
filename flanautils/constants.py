@@ -153,6 +153,11 @@ class CommonWords:
     }
 
     @classmethod
+    @property
+    def all_words(cls) -> list[str]:
+        return cls.get_words_by_language()
+
+    @classmethod
     def _get_language_names(cls, language: str = None) -> Iterable[str]:
         if language:
             return language,
@@ -178,13 +183,12 @@ class CommonWords:
         words = OrderedSet()
 
         for language_name in cls._get_language_names(language):
-            for v1 in cls.common_words[language_name].values():
-                match v1:
+            for iterable in cls.common_words[language_name].values():
+                match iterable:
                     case dict():
-                        for k2, v2 in v1.items():
-                            words += v2
+                        words += iterable.values()
                     case [*_]:
-                        words += v1
+                        words += iterable
 
         return list(words)
 
@@ -223,8 +227,3 @@ class CommonWords:
             return cls.get_greetings_by_language(language)[1]
         else:
             return cls.get_greetings_by_language(language)[2]
-
-    @classmethod
-    @property
-    def words(cls) -> list[str]:
-        return cls.get_words_by_language()
