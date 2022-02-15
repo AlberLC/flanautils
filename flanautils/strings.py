@@ -62,7 +62,7 @@ def find_coordinates(text: str) -> tuple[float, float] | list[tuple[float, float
 
     """
 
-    results = re.findall(r'[-+\d.]+[,;\s+-]+[-+\d.]+', translate(text, {'-': ' -', '+': ' +'}))
+    results = re.findall(r'[-+\d.]+[,;\s+-]+[-+\d.]+', replace(text, {'-': ' -', '+': ' +'}))
 
     formatted_results = []
     for result in results:
@@ -80,10 +80,10 @@ def find_coordinates(text: str) -> tuple[float, float] | list[tuple[float, float
             return formatted_results
 
 
-def find_jsons(text: str) -> list[dict]:
-    """Find all well formatted JSONs in the text and return them in dictionaries."""
+def find_jsons(text: str | pathlib.Path) -> list[dict]:
+    """Find all well formatted JSONs in a string or in a pathlib.Path and return them in dictionaries."""
 
-    text = path_to_text(text)
+    text = read_file(text) or text
 
     jsons = []
     position = 0
@@ -94,10 +94,11 @@ def find_jsons(text: str) -> list[dict]:
 
 
 def find_environment_variables(text: str | pathlib.Path) -> dict:
-    """Looks for environment variables in the text in .env format (key=value)."""
+    """Looks for environment variables in a string or in a pathlib.Path in .env format (key=value)."""
 
+    text = read_file(text) or text
     # noinspection PyTypeChecker
-    return dict(line.split('=', maxsplit=1) for original_line in path_to_text(text).splitlines() if '=' in (line := original_line.strip()) and not line.startswith('#'))
+    return dict(line.split('=', maxsplit=1) for original_line in text.splitlines() if '=' in (line := original_line.strip()) and not line.startswith('#'))
 
 
 def join_last_separator(elements: Iterable, separator: str, last_separator: str, final_char='') -> str:
@@ -167,16 +168,6 @@ def numbers_to_words(number: int, language='es') -> str:
         raise NotImplementedError('not implemented for that language')
 
 
-def path_to_text(path: str | pathlib.Path) -> str:
-    """
-    Returns the content of the file as text.
-
-    Returns the path argument as is if path is not a valid path string or pathlib.Path.
-    """
-
-    return read_file(path) or path
-
-
 @overload
 def random_string(min_len: int, max_len: int, letters=True, numbers=True, n_spaces=0) -> str:
     pass
@@ -237,59 +228,20 @@ def remove_accents(text: str, ignore=('ñ', 'ç')) -> str:
 
     >>> remove_accents('aáeèiîoöuuºªçñ')
     'aaeeiioouuçñ'
-    >>> remove_accents('Mañana iba a salir pero el otro día iba por la calle y casi me atropella un camión que iba muy rapido.')
+    >>> remove_accents('Mañana iba a salir pero el otro día iba por la calle y casi me atropella un camión que iba muy rápido.')
     'Mañana iba a salir pero el otro dia iba por la calle y casi me atropella un camion que iba muy rapido.'
     """
 
     return ''.join(char if char in ignore else unicodedata.normalize('NFD', char).encode('ascii', 'ignore').decode() for char in text)
 
 
-@overload
-def str_to_class(class_names: str | Type, globals_: dict) -> Type:
-    pass
-
-
-@overload
-def str_to_class(class_names: Iterable[str | Type], globals_: dict) -> tuple[Type, ...]:
-    pass
-
-
-def str_to_class(class_names: str | Type | Iterable[str | Type], globals_: dict) -> Type | tuple[Type, ...]:
-    """Converts the class or classes names into Python Types found in globals_."""
-
-    globals_ = globals_ or {}
-    if isinstance(class_names, str):
-        return globals_[class_names]
-    else:
-        return tuple(globals_[class_name] for class_name in class_names)
-
-
-def sum_numbers_in_text(text: str, language='es') -> int:
-    """
-    Add all the existing numbers in a text, whether they are in numerical or textual form.
-
-    >>> sum_numbers_in_text('Uno más dos. Y luego cuarenta y cuatro y cuarenta y 2 y 10 y 1 más 7.')
-    107
-    """
-
-    words = translate(text, {symbol: None for symbol in constants.SYMBOLS}).split()
-    n = 0
-    for word in words:
-        try:
-            n += int(word)
-        except ValueError:
-            pass
-
-    return n + words_to_numbers(text, language=language)
-
-
-def translate(text: str, replacements: dict) -> str:
+def replace(text: str, replacements: dict) -> str:
     """
     Returns a copy of text with the replacements applied.
 
-    >>> translate('abc.-.', {'.': '*', '-': '<===>'})
+    >>> replace('abc.-.', {'.': '*', '-': '<===>'})
     'abc*<===>*'
-    >>> translate('Hola1 que2 ase3', {'Hola': 'Hi', 'que': 'ase', 'ase': None})
+    >>> replace('Hola1 que2 ase3', {'Hola': 'Hi', 'que': 'ase', 'ase': None})
     'Hi1 ase2 3'
     """
 
@@ -319,6 +271,49 @@ def translate(text: str, replacements: dict) -> str:
     return ''.join(result)
 
 
+translate = replace
+
+
+@overload
+def str_to_class(class_names: str | Type, globals_: dict) -> Type:
+    pass
+
+
+@overload
+def str_to_class(class_names: Iterable[str | Type], globals_: dict) -> tuple[Type, ...]:
+    pass
+
+
+def str_to_class(class_names: str | Type | Iterable[str | Type], globals_: dict) -> Type | tuple[Type, ...]:
+    """Converts the class or classes names into Python Types found in globals_."""
+
+    globals_ = globals_ or {}
+    if isinstance(class_names, str):
+        return globals_[class_names]
+    else:
+        return tuple(globals_[class_name] for class_name in class_names)
+
+
+def sum_numbers_in_text(text: str, language='es') -> int:
+    """
+    Add all the existing numbers in a text, whether they are in numerical or textual form.
+
+    >>> sum_numbers_in_text('Uno más dos. Y luego cuarenta y cuatro y cuarenta y 2 y 10 y 1 más 7.')
+    107
+    >>> sum_numbers_in_text('0.1 + uno más dos, 5.2 -1.1 mas 5.3 -5.8 ')
+    6.7
+    """
+
+    n = 0
+    for word in text.split():
+        try:
+            n += cast_number(word.strip('.'))
+        except ValueError:
+            pass
+
+    return n + words_to_numbers(text, language=language)
+
+
 def words_to_numbers(text: str, ignore_no_numbers=True, language='es') -> int:
     """
     Convert all numbers in textual representation, according to the language, into an integer and return the sum of
@@ -333,7 +328,7 @@ def words_to_numbers(text: str, ignore_no_numbers=True, language='es') -> int:
     if language == 'es':
         number_words_es = constants.NUMBER_WORDS[language]
         text = re.sub(r'(([ei]nt[aeio])|(ec))', r'\1 ', text)
-        text = translate(text, {symbol: None for symbol in constants.SYMBOLS} | {'y': ' '})
+        text = replace(text, {symbol: None for symbol in constants.SYMBOLS} | {'y': ' '})
         words = text.lower().split()
         n = 0
         sign_ = 1

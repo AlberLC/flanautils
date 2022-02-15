@@ -176,4 +176,4 @@ class TestFlanaUtils(unittest.TestCase):
 
         for test_arg in tests_args:
             with self.subTest(test_arg):
-                self.assertEqual(test_arg[2], strings.translate(test_arg[0], test_arg[1]))
+                self.assertEqual(test_arg[2], strings.replace(test_arg[0], test_arg[1]))
