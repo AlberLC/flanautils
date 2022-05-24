@@ -1,8 +1,18 @@
 import inspect
 import typing
-from typing import Any, Callable, Iterable, Iterator, Type, overload
+from typing import Any, Callable, Iterable, Iterator, Sequence, Type, overload
 
 from flanautils import maths, strings
+
+
+def chunks(elements: Sequence, size, lazy=False) -> Iterator[Sequence] | list[Sequence]:
+    """Create successive n-sized chunks from elements."""
+
+    generator_ = (elements[i:i + size] for i in range(0, len(elements), size))
+    if lazy:
+        return generator_
+    else:
+        return list(generator_)
 
 
 # noinspection PyShadowingNames,PyShadowingBuiltins
