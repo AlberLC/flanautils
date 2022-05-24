@@ -89,7 +89,7 @@ class DictBase:
 
         return decode_dict(cls, data)
 
-    def to_dict(self, pickle_types: tuple | list = (Enum, AbstractSet), recursive=False) -> Any:
+    def to_dict(self, pickle_types: tuple | list = (), recursive=False) -> Any:
         """Returns the representation of the object as a dictionary."""
 
         def encode_obj(obj_) -> Any:
@@ -110,11 +110,9 @@ class DictBase:
             match v:
                 case DictBase() as obj:
                     self_vars[k] = encode_obj(obj)
-                case [*_, DictBase()] as objs:
-                    self_vars[k] = [encode_obj(obj) for obj in objs]
                 case obj if isinstance(obj, pickle_types):
                     self_vars[k] = pickle.dumps(obj)
-                case [*_, obj] as objs if isinstance(obj, pickle_types):
+                case [*_, obj] as objs if isinstance(obj, (DictBase, *pickle_types)):
                     self_vars[k] = [encode_obj(obj) for obj in objs]
 
         return self_vars
@@ -377,7 +375,7 @@ class MongoBase(DictBase, BytesBase):
     def _mongo_repr(self) -> Any:
         """Returns the object representation to save in mongo database."""
 
-        return self._dict_repr()
+        return {k: v.value if isinstance(v, Enum) else v for k, v in self._dict_repr().items()}
 
     def delete(self, cascade=False):
         """
@@ -463,15 +461,15 @@ class MongoBase(DictBase, BytesBase):
         if not query:
             unique_attributes = self.unique_attributes
 
-            if all(unique_attributes.values()):
+            if any(value is None for value in unique_attributes.values()):
+                query = {'_id': self._id}
+            else:
                 query = {}
                 for k, v in unique_attributes.items():
                     if isinstance(v, MongoBase):
                         v.pull_from_database(overwrite_fields=overwrite_fields)
                         v = v._id
                     query[k] = v
-            else:
-                query = {'_id': self._id}
 
         if document := self.collection.find_one(query):
             for database_key, database_value in vars(self.from_dict(document)).items():
@@ -493,7 +491,7 @@ class MongoBase(DictBase, BytesBase):
         for k in vars(self):
             getattr(self, k)
 
-    def save(self, pickle_types: tuple | list = (Enum, AbstractSet), pull_overwrite_fields: Iterable[str] = (), references=True):
+    def save(self, pickle_types: tuple | list = (AbstractSet,), pull_overwrite_fields: Iterable[str] = (), references=True):
         """
         Save (insert or update) the current object in the database.
 
@@ -519,7 +517,7 @@ class MongoBase(DictBase, BytesBase):
 
         self.collection.find_one_and_update({'_id': self._id}, {'$set': data}, upsert=True)
 
-    def to_mongo(self, pickle_types: tuple | list = (Enum, AbstractSet)) -> Any:
+    def to_mongo(self, pickle_types: tuple | list = (AbstractSet,)) -> Any:
         """Returns the representation of the object as a mongo compatible dictionary."""
 
         def encode_obj(obj_) -> Any:
@@ -538,11 +536,9 @@ class MongoBase(DictBase, BytesBase):
             match v:
                 case MongoBase() as obj:
                     self_vars[k] = encode_obj(obj)
-                case [*_, MongoBase()] as objs:
-                    self_vars[k] = [encode_obj(obj) for obj in objs]
                 case obj if isinstance(obj, pickle_types):
                     self_vars[k] = pickle.dumps(obj)
-                case [*_, obj] as objs if isinstance(obj, pickle_types):
+                case [*_, obj] as objs if isinstance(obj, (MongoBase, *pickle_types)):
                     self_vars[k] = [encode_obj(obj) for obj in objs]
 
         return self_vars
@@ -554,7 +550,12 @@ class MongoBase(DictBase, BytesBase):
         values.
         """
 
-        return {unique_key: getattr(self, unique_key, None) for unique_key in self._unique_keys}
+        unique_attributes = {}
+        for unique_key in self._unique_keys:
+            attribute_value = getattr(self, unique_key, None)
+            unique_attributes[unique_key] = attribute_value.value if isinstance(attribute_value, Enum) else attribute_value
+
+        return unique_attributes
 
 
 @dataclass(eq=False)
