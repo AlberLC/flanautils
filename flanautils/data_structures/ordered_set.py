@@ -32,11 +32,19 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
     def __add__(self, other) -> OrderedSet[E]:
         return self | other
 
+    def __iadd__(self, other):
+        return self.__ior__(other)
+
     def __radd__(self, other) -> OrderedSet[E]:
         return other | self
 
     def __and__(self, other) -> OrderedSet[E]:
         return OrderedSet(value for value in self if value in self.ordered_set_if_not_set(other))
+
+    def __iand__(self, other):
+        for value in (self - self.ordered_set_if_not_set(other)):
+            self.discard(value)
+        return self
 
     def __rand__(self, other) -> OrderedSet[E]:
         return self.ordered_set_if_not_set(other) & self
@@ -144,6 +152,11 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
     def __or__(self, other) -> OrderedSet[E]:
         return OrderedSet(super().__or__(self.ordered_set_if_not_set(other)))
 
+    def __ior__(self, other):
+        for value in self.ordered_set_if_not_set(other):
+            self.add(value)
+        return self
+
     def __ror__(self, other) -> OrderedSet[E]:
         return self.ordered_set_if_not_set(other) | self
 
@@ -157,8 +170,15 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
         return f"#{{{', '.join(repr(element) for element in self)}}}"
 
     def __sub__(self, other) -> OrderedSet[E]:
-        a = self.ordered_set_if_not_set(other)
-        return OrderedSet(super().__sub__(a))
+        return OrderedSet(super().__sub__(self.ordered_set_if_not_set(other)))
+
+    def __isub__(self, other):
+        if other is self:
+            self.clear()
+        else:
+            for value in self.ordered_set_if_not_set(other):
+                self.discard(value)
+        return self
 
     def __rsub__(self, other) -> OrderedSet[E]:
         return self.ordered_set_if_not_set(other) - self

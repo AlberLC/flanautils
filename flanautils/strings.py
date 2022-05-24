@@ -5,10 +5,10 @@ import random
 import re
 import secrets
 import string
-import unicodedata
 from typing import Iterable, Type, overload
 
 import jellyfish
+import unicodedata
 
 from flanautils import constants, iterables
 from flanautils.models.ratio_match import RatioMatch
