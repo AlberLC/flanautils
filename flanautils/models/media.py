@@ -1,6 +1,7 @@
 from __future__ import annotations  # todo0 remove in 3.11
 
 import itertools
+import pathlib
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, overload
@@ -22,7 +23,7 @@ class Media(FlanaBase):
     song_info: Media | None = None
 
     @overload
-    def __init__(self, url: str = None, type_: MediaType = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
+    def __init__(self, url: str | pathlib.Path = None, type_: MediaType = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
         pass
 
     @overload
@@ -30,16 +31,16 @@ class Media(FlanaBase):
         pass
 
     @overload
-    def __init__(self, url: str = None, bytes_: bytes = None, type_: MediaType = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
+    def __init__(self, url: str | pathlib.Path = None, bytes_: bytes = None, type_: MediaType = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
         pass
 
     @overload
-    def __init__(self, bytes_: bytes = None, url: str = None, type_: MediaType = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
+    def __init__(self, bytes_: bytes = None, url: str | pathlib.Path = None, type_: MediaType = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
         pass
 
     def __init__(self, *args, **kwargs):
-        main_ars = list(itertools.takewhile(lambda arg_: isinstance(arg_, str | bytes), args))
-        self.url = iterables.find(main_ars, str)
+        main_ars = list(itertools.takewhile(lambda arg_: isinstance(arg_, str | bytes | pathlib.Path), args))
+        self.url = iterables.find(main_ars, str | pathlib.Path)
         self.bytes_ = iterables.find(reversed(main_ars), bytes)
 
         rest_attributes_names = ('type_', 'source', 'title', 'author', 'album', 'song_info')
@@ -47,6 +48,8 @@ class Media(FlanaBase):
             setattr(self, attributes_name, arg)
 
         self.url = kwargs.get('url') or self.url
+        if isinstance(self.url, pathlib.Path):
+            self.url = str(self.url)
         self.bytes_ = kwargs.get('bytes_') or self.bytes_
         self.type_ = kwargs.get('type_') or self.type_
         self.source = kwargs.get('source') or self.source
