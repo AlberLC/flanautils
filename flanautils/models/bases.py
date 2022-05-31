@@ -381,7 +381,7 @@ class MongoBase(DictBase, BytesBase):
         """
         Delete the object from the database.
 
-        If cascade=True all objects whose classes inherit from _MongoBase are also deleted.
+        If cascade=True all objects whose classes inherit from MongoBase are also deleted.
         """
 
         if cascade:
@@ -432,7 +432,7 @@ class MongoBase(DictBase, BytesBase):
         return cls.from_dict(super().from_bytes(bytes_))
 
     def get_referenced_objects(self) -> list[MongoBase]:
-        """Returns all referenced objects whose classes inherit from _MongoBase."""
+        """Returns all referenced objects whose classes inherit from MongoBase."""
 
         referenced_objects = []
         for k, v in vars(self).items():
@@ -448,7 +448,7 @@ class MongoBase(DictBase, BytesBase):
     def object_id(self):
         return self._id
 
-    def pull_from_database(self, query: dict = None, overwrite_fields: Iterable[str] = ()):
+    def pull_from_database(self, overwrite_fields: Iterable[str] = ('_id',), exclude: Iterable[str] = ()):
         """
         Updates the values of the current object with the values of the same object located in the database.
 
@@ -458,52 +458,59 @@ class MongoBase(DictBase, BytesBase):
         Ignore the attributes specified in exclude.
         """
 
-        if not query:
-            unique_attributes = self.unique_attributes
+        unique_attributes = self.unique_attributes
 
-            if any(value is None for value in unique_attributes.values()):
-                query = {'_id': self._id}
-            else:
-                query = {}
-                for k, v in unique_attributes.items():
-                    if isinstance(v, MongoBase):
-                        v.pull_from_database(overwrite_fields=overwrite_fields)
-                        v = v._id
-                    query[k] = v
+        if any(value is None for value in unique_attributes.values()):
+            query = {'_id': self._id}
+        else:
+            query = {}
+            for k, v in unique_attributes.items():
+                if isinstance(v, MongoBase):
+                    v.pull_from_database(overwrite_fields, exclude)
+                    v = v._id
+                query[k] = v
 
         if document := self.collection.find_one(query):
             for database_key, database_value in vars(self.from_dict(document)).items():
                 self_value = getattr(self, database_key)
                 if (
-                        self_value is None
-                        or
-                        (isinstance(self_value, Iterable) and not self_value)
-                        or
-                        (database_key in overwrite_fields and database_value is not None)
-                        or
-                        database_key == '_id'
+                        database_key not in exclude
+                        and
+                        (
+                                database_key in overwrite_fields and database_value is not None
+                                or
+                                self_value is None
+                                or
+                                isinstance(self_value, Iterable) and not self_value
+                        )
                 ):
                     super().__setattr__(database_key, database_value)
 
     def resolve(self):
-        """Resolve all the ObjectId references (ObjectId -> _MongoBase)."""
+        """Resolve all the ObjectId references (ObjectId -> MongoBase)."""
 
         for k in vars(self):
             getattr(self, k)
 
-    def save(self, pickle_types: tuple | list = (AbstractSet,), pull_overwrite_fields: Iterable[str] = (), references=True):
+    def save(
+        self,
+        pickle_types: tuple | list = (AbstractSet,),
+        references=True,
+        pull_overwrite_fields: Iterable[str] = ('_id',),
+        pull_exclude: Iterable[str] = ()
+    ):
         """
         Save (insert or update) the current object in the database.
 
-        If references=True it saves the objects without redundancy (_MongoBase -> ObjectId).
+        If references=True it saves the objects without redundancy (MongoBase -> ObjectId).
         """
 
         if self.collection is None:
             return
 
-        self.pull_from_database(overwrite_fields=pull_overwrite_fields)
+        self.pull_from_database(pull_overwrite_fields, pull_exclude)
         for referenced_object in self.get_referenced_objects():
-            referenced_object.save(pickle_types, pull_overwrite_fields, references)
+            referenced_object.save(pickle_types, references, pull_overwrite_fields, pull_exclude)
 
         data = self.to_mongo(pickle_types)
 
