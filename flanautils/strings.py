@@ -220,11 +220,11 @@ def read_file(path: str | pathlib.Path) -> str | None:
                     return file.read()
 
 
-def remove_accents(text: str, ignore=('ñ', 'ç')) -> str:
+def remove_accents(text: str, ignore: Iterable = ('ñ', 'ç')) -> str:
     """
     Encode the string to remove the accents from non ascii characters.
 
-    Ignore the strings contained in ignore argument. By default ignore=('ñ', 'ç').
+    Ignore the characters contained in ignore argument. By default ignore=('ñ', 'ç').
 
     >>> remove_accents('aáeèiîoöuuºªçñ')
     'aaeeiioouuçñ'
@@ -233,6 +233,26 @@ def remove_accents(text: str, ignore=('ñ', 'ç')) -> str:
     """
 
     return ''.join(char if char in ignore else unicodedata.normalize('NFD', char).encode('ascii', 'ignore').decode() for char in text)
+
+
+def remove_symbols(text: str, ignore: Iterable = (), replace_with='') -> str:
+    """
+    Remove the typical symbols from the string.
+
+    Ignore the characters contained in ignore argument. By default ignore=().
+
+    Symbols are replaced with replace_with argument. By default replace_with=''.
+
+    >>> remove_symbols('¿No vás muy rápido? Yo creo que sí.')
+    'No vás muy rápido Yo creo que sí'
+    >>> remove_symbols('¿No vás muy rápido? Yo creo que sí.', ignore=('?',), replace_with='8')
+    '8No vás muy rápido? Yo creo que sí8'
+    """
+
+    return ''.join((char if char in ignore else replace_with) if char in constants.SYMBOLS else char for char in text)
+
+
+replace_symbols = remove_symbols
 
 
 def replace(text: str, replacements: dict) -> str:
