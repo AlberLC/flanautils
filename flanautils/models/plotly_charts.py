@@ -1,7 +1,6 @@
 from __future__ import annotations  # todo0 remove in 3.11
 
 import functools
-import pickle
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable
 
@@ -13,7 +12,7 @@ import sympy
 from plotly.io import _html, _kaleido
 
 from flanautils import iterables, oss
-from flanautils.models.bases import FlanaBase, MongoBase
+from flanautils.models.bases import FlanaBase
 
 
 def get_plotlyjs():
@@ -79,7 +78,7 @@ class TraceMetadata(FlanaBase):
 
 
 @dataclass(unsafe_hash=True)
-class MultiTraceChart(MongoBase, FlanaBase):
+class MultiTraceChart(FlanaBase):
     """Class that simplifies the use of Plotly charts with several traces."""
 
     _font: dict = field(default_factory=dict)
@@ -123,8 +122,8 @@ class MultiTraceChart(MongoBase, FlanaBase):
             super().__setattr__(key, value)
         self.figure.update_layout({key: value})
 
-    def _mongo_repr(self) -> Any:
-        return pickle.dumps(self)
+    def _dict_repr(self) -> Any:
+        return bytes(self)
 
     def add_lines(self):
         """Print the x-axis horizontal line."""
