@@ -10,6 +10,7 @@ import pprint
 import typing
 from dataclasses import dataclass, field
 from enum import Enum
+from types import NoneType
 from typing import AbstractSet, Any, Iterable, Iterator, Sequence
 
 import pymongo.collection
@@ -82,8 +83,11 @@ class DictBase:
                         new_data[k] = decode_dict(type_, dict_)
                     case [*_] as list_ if not isinstance(list_, set) and type_origin and type_origin is not typing.Union and issubclass(type_origin, Iterable) and issubclass(value_type, DictBase) and not lazy:
                         new_data[k] = [decode_dict(value_type, dict_) for dict_ in list_]
-                    case bytes(bytes_) if type_ is not bytes:
-                        new_data[k] = pickle.loads(bytes_)
+                    case bytes(bytes_):
+                        try:
+                            new_data[k] = pickle.loads(bytes_)
+                        except (pickle.UnpicklingError, EOFError):
+                            pass
 
             return new_data if issubclass(cls_, dict) else cls_(**new_data)
 
@@ -93,13 +97,15 @@ class DictBase:
         """Returns the representation of the object as a dictionary."""
 
         def encode_obj(obj_) -> Any:
-            # noinspection PyProtectedMember,PyUnresolvedReferences
-            if isinstance(obj_, pickle_types) and not obj_._dict_repr.__qualname__.startswith(obj_.__class__.__name__):
-                return pickle.dumps(obj_)
-            elif recursive:
-                return obj_.to_dict()
-            else:
-                return obj_
+            match obj_:
+                case _ if isinstance(obj_, pickle_types):
+                    return pickle.dumps(obj_)
+                case MongoBase():
+                    return obj_.to_dict(pickle_types)
+                case [*_, _] as objs:
+                    return [encode_obj(obj) for obj in objs]
+                case _:
+                    return obj_
 
         if not isinstance(dict_repr := self._dict_repr(), dict):
             return dict_repr
@@ -107,13 +113,7 @@ class DictBase:
         # noinspection DuplicatedCode
         self_vars = dict_repr.copy()
         for k, v in self_vars.items():
-            match v:
-                case DictBase() as obj:
-                    self_vars[k] = encode_obj(obj)
-                case obj if isinstance(obj, pickle_types):
-                    self_vars[k] = pickle.dumps(obj)
-                case [*_, obj] as objs if isinstance(obj, (DictBase, *pickle_types)):
-                    self_vars[k] = [encode_obj(obj) for obj in objs]
+            self_vars[k] = encode_obj(v)
 
         return self_vars
 
@@ -528,11 +528,15 @@ class MongoBase(DictBase, BytesBase):
         """Returns the representation of the object as a mongo compatible dictionary."""
 
         def encode_obj(obj_) -> Any:
-            # noinspection PyProtectedMember,PyUnresolvedReferences
-            if isinstance(obj_, pickle_types) and not obj_._mongo_repr.__qualname__.startswith(obj_.__class__.__name__):
-                return pickle.dumps(obj_)
-            else:
-                return obj_.to_mongo()
+            match obj_:
+                case MongoBase() if not isinstance(obj_, pickle_types):
+                    return obj_.to_mongo(pickle_types)
+                case [*_, _] as objs:
+                    return [encode_obj(obj) for obj in objs]
+                case _ if not isinstance(obj_, (NoneType, int, float, str, bool, bytes, Sequence, dict, datetime.date, datetime.datetime, ObjectId)):
+                    return pickle.dumps(obj_)
+                case _:
+                    return obj_
 
         if not isinstance(mongo_repr := self._mongo_repr(), dict):
             return mongo_repr
@@ -540,13 +544,7 @@ class MongoBase(DictBase, BytesBase):
         # noinspection DuplicatedCode
         self_vars = mongo_repr.copy()
         for k, v in self_vars.items():
-            match v:
-                case MongoBase() as obj:
-                    self_vars[k] = encode_obj(obj)
-                case obj if isinstance(obj, pickle_types):
-                    self_vars[k] = pickle.dumps(obj)
-                case [*_, obj] as objs if isinstance(obj, (MongoBase, *pickle_types)):
-                    self_vars[k] = [encode_obj(obj) for obj in objs]
+            self_vars[k] = encode_obj(v)
 
         return self_vars
 
