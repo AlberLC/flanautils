@@ -2,7 +2,7 @@ from __future__ import annotations  # todo0 remove in 3.11
 
 import functools
 from dataclasses import dataclass, field
-from typing import Any, Callable, Iterable
+from typing import Callable, Iterable
 
 import plotly
 import plotly.basedatatypes
@@ -121,9 +121,6 @@ class MultiTraceChart(FlanaBase):
         except KeyError:
             super().__setattr__(key, value)
         self.figure.update_layout({key: value})
-
-    def _dict_repr(self) -> Any:
-        return bytes(self)
 
     def add_lines(self):
         """Print the x-axis horizontal line."""
