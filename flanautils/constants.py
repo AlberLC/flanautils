@@ -1,6 +1,6 @@
 import datetime
 import random
-from typing import Iterable
+from typing import Iterable, Sequence
 
 from flanautils.data_structures.bi_dict import BiDict
 from flanautils.data_structures.ordered_set import OrderedSet
@@ -72,33 +72,36 @@ class CommonWords:
                 'week', 'weetly', 'well', 'wetly', 'wholly', 'wildly', 'willfully', 'wisely', 'wishfully', 'woefully',
                 'wonderfully', 'worriedly', 'wrongly', 'yawningly', 'year', 'yearly', 'yearningly', 'yesterday',
                 'yieldingly', 'youthfully', 'zealously', 'zestfully', 'zestily'),
-            'determiner': {
-                'definite_article': ('the',),
-                'indefinite': ('another', 'any', 'every', 'few', 'lot', 'much', 'other', 'several', 'some', 'very'),
-                'indefinite_article': ('a', 'an'),
-                'possessive': ('hers', 'his', 'its', 'my', 'our', 'their', 'whose', 'your'),
-                'demonstrative': ('that', 'these', 'this', 'those'),
-                'numeral': (),
-                'ordinal': ('first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'),
+            'conjunctions': ('and', 'or'),
+            'determiners': {
+                'definite_articles': ('the',),
+                'indefinites': ('another', 'any', 'every', 'few', 'lot', 'much', 'other', 'several', 'some', 'very'),
+                'indefinite_articles': ('a', 'an'),
+                'possessives': ('hers', 'his', 'its', 'my', 'our', 'their', 'whose', 'your'),
+                'demonstratives': ('that', 'these', 'this', 'those'),
+                'numerals': (),
+                'ordinals': ('first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth',
+                             'tenth'),
             },
             'greetings': ('Good morning.', 'Good afternoon.', 'Goodnight.'),
-            'preposition': ('about', 'above', 'abroad', 'accordance', 'according', 'account', 'across', 'addition',
-                            'after', 'against', 'ago', 'ahead', 'along', 'amidst', 'among', 'amongst', 'apart', 'around',
-                            'as', 'aside', 'at', 'away', 'because', 'before', 'behalf', 'behind', 'below', 'beneath',
-                            'beside', 'besides', 'between', 'beyond', 'but', 'by', 'case', 'close', 'despite', 'down',
-                            'due', 'during', 'except', 'farwell', 'for', 'from', 'front', 'hence', 'in', 'inside',
-                            'instead', 'into', 'lieu', 'like', 'means', 'near', 'next', 'notwithstanding', 'of', 'off',
-                            'on', 'onto', 'opposite', 'out', 'outside', 'over', 'owing', 'past', 'per', 'place', 'prior',
-                            'round', 'since', 'spite', 'than', 'through', 'throughout', 'till', 'times', 'to', 'top',
-                            'toward', 'towards', 'under', 'underneath', 'unlike', 'until', 'unto', 'up', 'upon', 'via',
-                            'view', 'with', 'within', 'without', 'worth'),
-            'pronoun': {
-                'interrogative': ('what', 'which', 'who', 'whom', 'whose'),
-                'object': ('her', 'him', 'it', 'me', 'them', 'us', 'you'),
-                'possessive': ('hers', 'his', 'its', 'mine', 'ours', 'theirs', 'yours'),
-                'reflexive': ('herself', 'himself', 'itself', 'myself', 'ourselves', 'themselves', 'yourself',
-                              'yourselves'),
-                'subject': ('he', 'i', 'it', 'she', 'they', 'we', 'you'),
+            'prepositions': ('about', 'above', 'abroad', 'accordance', 'according', 'account', 'across', 'addition',
+                             'after', 'against', 'ago', 'ahead', 'along', 'amidst', 'among', 'amongst', 'apart',
+                             'around', 'as', 'aside', 'at', 'away', 'because', 'before', 'behalf', 'behind', 'below',
+                             'beneath', 'beside', 'besides', 'between', 'beyond', 'but', 'by', 'case', 'close',
+                             'despite', 'down', 'due', 'during', 'except', 'farwell', 'for', 'from', 'front', 'hence',
+                             'in', 'inside', 'instead', 'into', 'lieu', 'like', 'means', 'near', 'next',
+                             'notwithstanding', 'of', 'off', 'on', 'onto', 'opposite', 'out', 'outside', 'over',
+                             'owing', 'past', 'per', 'place', 'prior', 'round', 'since', 'spite', 'than', 'through',
+                             'throughout', 'till', 'times', 'to', 'top', 'toward', 'towards', 'under', 'underneath',
+                             'unlike', 'until', 'unto', 'up', 'upon', 'via', 'view', 'with', 'within', 'without',
+                             'worth'),
+            'pronouns': {
+                'interrogatives': ('what', 'which', 'who', 'whom', 'whose'),
+                'objects': ('her', 'him', 'it', 'me', 'them', 'us', 'you'),
+                'possessives': ('hers', 'his', 'its', 'mine', 'ours', 'theirs', 'yours'),
+                'reflexives': ('herself', 'himself', 'itself', 'myself', 'ourselves', 'themselves', 'yourself',
+                               'yourselves'),
+                'subjects': ('he', 'i', 'it', 'she', 'they', 'we', 'you'),
             },
             'others': ("don't", 'dont', 'let', "let's", 'lets', 'no', 'not', 'yes')
         },
@@ -116,105 +119,86 @@ class CommonWords:
                 'responsablemente', 'seguramente', 'si', 'siempre', 'siquiera', 'solamente', 'solo', 'tal', 'tambien',
                 'tampoco', 'tan', 'tanto', 'tarde', 'temprano', 'todavia', 'todo', 'ultimamente', 'unicamente',
                 'verdaderamente', 'vez', 'viceversa', 'ya'),
-            'determiner': {
-                'definite_article': ('al', 'del', 'el', 'la', 'las', 'lo', 'los'),
-                'indefinite': ('algun', 'alguna', 'algunas', 'alguno', 'algunos', 'bastante', 'bastantes', 'cualesquiera',
-                               'cualquier', 'cualquiera', 'demasiada', 'demasiadas', 'demasiado', 'demasiados', 'misma',
-                               'mismas', 'mismo', 'mismos', 'mucha', 'muchas', 'mucho', 'muchos', 'ningun', 'ninguna',
-                               'ningunas', 'ninguno', 'ningunos', 'otra', 'otras', 'otro', 'otros', 'poca', 'pocas', 'poco',
-                               'pocos', 'tal', 'tales', 'tanta', 'tantas', 'tanto', 'tantos', 'toda', 'todas', 'todo',
-                               'todos', 'uno', 'varias', 'varios'),
-                'indefinite_article': ('un', 'una', 'unas', 'unos'),
-                'possessive': ('mi', 'mia', 'mias', 'mio', 'mios', 'mis', 'nuestra', 'nuestras', 'nuestro', 'nuestros',
-                               'su', 'sus', 'suya', 'suyas', 'suyo', 'suyos', 'tu', 'tus', 'tuya', 'tuyas', 'tuyo',
-                               'tuyos', 'vuestra', 'vuestras', 'vuestro', 'vuestros'),
-                'demonstrative': ('aquel', 'aquella', 'aquellas', 'aquello', 'aquellos', 'esa', 'esas', 'ese', 'eso',
-                                  'esos', 'esta', 'estas', 'este', 'estos'),
-                'numeral': (),
-                'ordinal': ('primero', 'segundo', 'tercero', 'cuarto', 'quinto', 'sexto', 'septimo', 'octavo', 'noveno',
-                            'decimo'),
+            'conjunctions': ('o', 'y'),
+            'determiners': {
+                'definite_articles': ('al', 'del', 'el', 'la', 'las', 'lo', 'los'),
+                'indefinites': ('algun', 'alguna', 'algunas', 'alguno', 'algunos', 'bastante', 'bastantes',
+                                'cualesquiera', 'cualquier', 'cualquiera', 'demasiada', 'demasiadas', 'demasiado',
+                                'demasiados', 'misma', 'mismas', 'mismo', 'mismos', 'mucha', 'muchas', 'mucho',
+                                'muchos', 'ningun', 'ninguna', 'ningunas', 'ninguno', 'ningunos', 'otra', 'otras',
+                                'otro', 'otros', 'poca', 'pocas', 'poco', 'pocos', 'tal', 'tales', 'tanta', 'tantas',
+                                'tanto', 'tantos', 'toda', 'todas', 'todo', 'todos', 'uno', 'varias', 'varios'),
+                'indefinite_articles': ('un', 'una', 'unas', 'unos'),
+                'possessives': ('mi', 'mia', 'mias', 'mio', 'mios', 'mis', 'nuestra', 'nuestras', 'nuestro', 'nuestros',
+                                'su', 'sus', 'suya', 'suyas', 'suyo', 'suyos', 'tu', 'tus', 'tuya', 'tuyas', 'tuyo',
+                                'tuyos', 'vuestra', 'vuestras', 'vuestro', 'vuestros'),
+                'demonstratives': ('aquel', 'aquella', 'aquellas', 'aquello', 'aquellos', 'esa', 'esas', 'ese', 'eso',
+                                   'esos', 'esta', 'estas', 'este', 'estos'),
+                'numerals': (),
+                'ordinals': ('primero', 'segundo', 'tercero', 'cuarto', 'quinto', 'sexto', 'septimo', 'octavo',
+                             'noveno', 'decimo'),
             },
             'greetings': ('Buenos días.', 'Buenas tardes.', 'Buenas noches.'),
-            'preposition': ('a', 'ante', 'bajo', 'cabe', 'con', 'contra', 'de', 'desde', 'durante', 'en', 'entre', 'hacia',
-                            'hasta', 'mediante', 'para', 'por', 'según', 'sin', 'so', 'sobre', 'tras', 'versus', 'vía'),
-            'pronoun': {
-                'interrogative': ('cual', 'cuales', 'cuanta', 'cuantas', 'cuanto', 'cuantos', 'que'),
-                'object': ('conmigo', 'consigo', 'contigo', 'el', 'ella', 'ellas', 'ello', 'ellos', 'mi', 'nosotras',
-                           'nostros', 'si', 'ti', 'usted', 'ustedes', 'vos', 'vosotras', 'vosotros'),
-                'possessive': ('mia', 'mias', 'mio', 'mios', 'nuestra', 'nuestras', 'nuestro', 'nuestros', 'suya', 'suyas',
-                               'suyo', 'suyos', 'tuya', 'tuyas', 'tuyo', 'tuyos', 'vuestra', 'vuestras', 'vuestro',
-                               'vuestros'),
-                'reflexive': ('me', 'nos', 'os', 'se', 'te'),
-                'subject': ('el', 'ella', 'ellas', 'ello', 'ellos', 'la', 'las', 'le', 'les', 'lo', 'los', 'me', 'nos',
-                            'nosotras', 'nosotros', 'os', 'se', 'te', 'tu', 'usted', 'ustedes', 'vos', 'vosotras', 'vosotros', 'yo'),
+            'prepositions': ('a', 'ante', 'bajo', 'cabe', 'con', 'contra', 'de', 'desde', 'durante', 'en', 'entre',
+                             'hacia', 'hasta', 'mediante', 'para', 'por', 'según', 'sin', 'so', 'sobre', 'tras',
+                             'versus', 'vía'),
+            'pronouns': {
+                'interrogatives': ('cual', 'cuales', 'cuanta', 'cuantas', 'cuanto', 'cuantos', 'que'),
+                'objects': ('conmigo', 'consigo', 'contigo', 'el', 'ella', 'ellas', 'ello', 'ellos', 'mi', 'nosotras',
+                            'nostros', 'si', 'ti', 'usted', 'ustedes', 'vos', 'vosotras', 'vosotros'),
+                'possessives': ('mia', 'mias', 'mio', 'mios', 'nuestra', 'nuestras', 'nuestro', 'nuestros', 'suya',
+                                'suyas', 'suyo', 'suyos', 'tuya', 'tuyas', 'tuyo', 'tuyos', 'vuestra', 'vuestras',
+                                'vuestro', 'vuestros'),
+                'reflexives': ('me', 'nos', 'os', 'se', 'te'),
+                'subjects': ('el', 'ella', 'ellas', 'ello', 'ellos', 'la', 'las', 'le', 'les', 'lo', 'los', 'me', 'nos',
+                             'nosotras', 'nosotros', 'os', 'se', 'te', 'tu', 'usted', 'ustedes', 'vos', 'vosotras',
+                             'vosotros', 'yo'),
             },
             'others': ('ha', 'hace', 'hacer', 'hara', 'he', 'no', 'si', 'va', 'vamos', 'voy')
         }
     }
 
     @classmethod
-    @property
-    def all_words(cls) -> list[str]:
-        return cls.get_words_by_language()
+    def _get_language_names(cls, languages: str | Sequence[str] = ()) -> Iterable[str]:
+        match languages:
+            case _ if not languages:
+                return cls.common_words.keys()
+            case str():
+                return languages,
+            case [*_]:
+                return languages
 
     @classmethod
-    def _get_language_names(cls, language: str = None) -> Iterable[str]:
-        if language:
-            return language,
-        else:
-            return cls.common_words.keys()
+    def get(cls, groups: Iterable[str] = (), languages: str | Sequence[str] = ()) -> list[str]:
+        def recursive_get(data: Iterable | dict, return_sequence=False) -> Sequence:
+            match data:
+                case [*_]:
+                    if return_sequence:
+                        return data
+                    else:
+                        return ()
+                case dict():
+                    words_ = OrderedSet()
+                    for k, v in data.items():
+                        words_ += recursive_get(v, return_sequence or k in groups)
+                    return words_
 
-    @classmethod
-    @property
-    def en_greetings(cls) -> list[str]:
-        return cls.get_greetings_by_language('en')
-
-    @classmethod
-    @property
-    def en_words(cls) -> list[str]:
-        return cls.get_words_by_language('en')
-
-    @classmethod
-    def get_greetings_by_language(cls, language: str = None) -> list[str]:
-        return [greeting for language_name in cls._get_language_names(language) for greeting in cls.common_words[language_name]['greetings']]
-
-    @classmethod
-    def get_words_by_language(cls, language: str = None) -> list[str]:
         words = OrderedSet()
 
-        for language_name in cls._get_language_names(language):
-            for iterable in cls.common_words[language_name].values():
-                match iterable:
-                    case dict():
-                        words += iterable.values()
-                    case [*_]:
-                        words += iterable
+        for language_name in cls._get_language_names(languages):
+            words += recursive_get(cls.common_words[language_name], not groups)
 
         return list(words)
 
     @classmethod
-    @property
-    def greetings(cls) -> list[str]:
-        return cls.get_greetings_by_language()
-
-    @classmethod
-    @property
-    def es_greetings(cls) -> list[str]:
-        return cls.get_greetings_by_language('es')
-
-    @classmethod
-    @property
-    def es_words(cls) -> list[str]:
-        return cls.get_words_by_language('es')
-
-    @classmethod
     def random_time_greeting(cls, language: str = None) -> str:
         language = language or random.choice(list(cls.common_words.keys()))
+        greeting = cls.time_greeting(language)
         return random.choice((
-            cls.time_greeting(language),
-            cls.time_greeting(language).lower(),
-            cls.time_greeting(language)[:-1],
-            cls.time_greeting(language).lower()[:-1]
+            greeting,
+            greeting.lower(),
+            greeting[:-1],
+            greeting.lower()[:-1]
         ))
 
     @classmethod
@@ -222,8 +206,8 @@ class CommonWords:
         hour = datetime.datetime.now().hour
 
         if 7 <= hour < 12:
-            return cls.get_greetings_by_language(language)[0]
+            return cls.get('greetings', language)[0]
         elif 12 <= hour < 21:
-            return cls.get_greetings_by_language(language)[1]
+            return cls.get('greetings', language)[1]
         else:
-            return cls.get_greetings_by_language(language)[2]
+            return cls.get('greetings', language)[2]
