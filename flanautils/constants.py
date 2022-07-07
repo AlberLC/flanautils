@@ -169,7 +169,7 @@ class CommonWords:
                 return languages
 
     @classmethod
-    def get(cls, keys: Iterable[str] = (), languages: str | Sequence[str] = ()) -> list[str]:
+    def get(cls, keys: str | Iterable[str] = (), languages: str | Sequence[str] = ()) -> list[str]:
         def recursive_get(data: Iterable | dict, return_sequence=False) -> Sequence:
             match data:
                 case [*_]:
@@ -183,6 +183,8 @@ class CommonWords:
                         words_ += recursive_get(v, return_sequence or k in keys)
                     return words_
 
+        if isinstance(keys, str):
+            keys = keys,
         words = OrderedSet()
 
         for language_name in cls._get_language_names(languages):
