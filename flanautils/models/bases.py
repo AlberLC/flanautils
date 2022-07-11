@@ -460,7 +460,7 @@ class MongoBase(DictBase, BytesBase):
 
         unique_attributes = self.unique_attributes
 
-        if any(value is None for value in unique_attributes.values()):
+        if not unique_attributes or any(value is None for value in unique_attributes.values()):
             query = {'_id': self._id}
         else:
             query = {}
