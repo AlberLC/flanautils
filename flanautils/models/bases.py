@@ -448,7 +448,7 @@ class MongoBase(DictBase, BytesBase):
     def object_id(self):
         return self._id
 
-    def pull_from_database(self, overwrite_fields: Iterable[str] = ('_id',), exclude: Iterable[str] = ()):
+    def pull_from_database(self, overwrite_fields: Iterable[str] = ('_id',), exclude_fields: Iterable[str] = ()):
         """
         Updates the values of the current object with the values of the same object located in the database.
 
@@ -466,7 +466,7 @@ class MongoBase(DictBase, BytesBase):
             query = {}
             for k, v in unique_attributes.items():
                 if isinstance(v, MongoBase):
-                    v.pull_from_database(overwrite_fields, exclude)
+                    v.pull_from_database(overwrite_fields, exclude_fields)
                     v = v._id
                 query[k] = v
 
@@ -474,7 +474,7 @@ class MongoBase(DictBase, BytesBase):
             for database_key, database_value in vars(self.from_dict(document)).items():
                 self_value = getattr(self, database_key)
                 if (
-                        database_key not in exclude
+                        database_key not in exclude_fields
                         and
                         (
                                 database_key in overwrite_fields and database_value is not None
@@ -494,25 +494,32 @@ class MongoBase(DictBase, BytesBase):
 
     def save(
         self,
+        fields: Iterable[str] = None,
         pickle_types: tuple | list = (AbstractSet,),
         references=True,
         pull_overwrite_fields: Iterable[str] = ('_id',),
-        pull_exclude: Iterable[str] = ()
+        pull_exclude_fields: Iterable[str] = ()
     ):
         """
         Save (insert or update) the current object in the database.
 
-        If references=True it saves the objects without redundancy (MongoBase -> ObjectId).
+        fields: specify the fields to save. If not, the entire object is saved.
+        pickle_types: specified types are pickled before saving. (AbstractSet,) by default.
+        references: if it's True (by default), saves the objects without redundancy (MongoBase -> ObjectId).
+        pull_overwrite_fields: force overwriting those fields from the database before saving.
+        pull_exclude_fields: ignore overwriting those fields from the database before saving.
         """
 
         if self.collection is None:
             return
 
-        self.pull_from_database(pull_overwrite_fields, pull_exclude)
+        self.pull_from_database(pull_overwrite_fields, pull_exclude_fields)
         for referenced_object in self.get_referenced_objects():
-            referenced_object.save(pickle_types, references, pull_overwrite_fields, pull_exclude)
+            referenced_object.save(fields, pickle_types, references, pull_overwrite_fields, pull_exclude_fields)
 
         data = self.to_mongo(pickle_types)
+        if fields is not None:
+            data = {k: v for k, v in data.items() if k in fields}
 
         if references:
             for k, v in data.items():
