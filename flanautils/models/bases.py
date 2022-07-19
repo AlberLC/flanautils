@@ -431,11 +431,15 @@ class MongoBase(DictBase, BytesBase):
     def from_bytes(cls, bytes_: bytes) -> Any:
         return cls.from_dict(super().from_bytes(bytes_))
 
-    def get_referenced_objects(self) -> list[MongoBase]:
+    def get_referenced_objects(self, fields: Iterable[str] = None) -> list[MongoBase]:
         """Returns all referenced objects whose classes inherit from MongoBase."""
 
+        data = vars(self)
+        if fields is not None:
+            data = {k: v for k, v in data.items() if k in fields}
+
         referenced_objects = []
-        for k, v in vars(self).items():
+        for k, v in data.items():
             match v:
                 case MongoBase() as obj:
                     referenced_objects.append(obj)
@@ -514,8 +518,8 @@ class MongoBase(DictBase, BytesBase):
             return
 
         self.pull_from_database(pull_overwrite_fields, pull_exclude_fields)
-        for referenced_object in self.get_referenced_objects():
-            referenced_object.save(fields, pickle_types, references, pull_overwrite_fields, pull_exclude_fields)
+        for referenced_object in self.get_referenced_objects(fields):
+            referenced_object.save(pickle_types=pickle_types, references=references, pull_overwrite_fields=pull_overwrite_fields, pull_exclude_fields=pull_exclude_fields)
 
         data = self.to_mongo(pickle_types)
         if fields is not None:
