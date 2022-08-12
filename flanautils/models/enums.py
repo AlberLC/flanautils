@@ -11,7 +11,7 @@ class MediaType(FlanaEnum):
     VIDEO = auto()
 
     @property
-    def extension(self) -> str:
+    def default_extension(self) -> str:
         if self is MediaType.AUDIO:
             return 'mp3'
         elif self is MediaType.GIF:

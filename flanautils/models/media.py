@@ -13,29 +13,30 @@ from flanautils.models.enums import MediaType, Source
 
 @dataclass(unsafe_hash=True)
 class Media(FlanaBase):
-    url: str | None = None
-    bytes_: bytes | None = None
-    type_: MediaType | None = None
-    source: Source | None = None
-    title: str | None = None
-    author: str | None = None
-    album: str | None = None
-    song_info: Media | None = None
+    url: str = None
+    bytes_: bytes = None
+    type_: MediaType = None
+    extension: str = None
+    source: Source = None
+    title: str = None
+    author: str = None
+    album: str = None
+    song_info: Media = None
 
     @overload
-    def __init__(self, url: str | pathlib.Path = None, type_: MediaType = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
+    def __init__(self, url: str | pathlib.Path = None, type_: MediaType = None, extension: str = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
         pass
 
     @overload
-    def __init__(self, bytes_: bytes = None, type_: MediaType = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
+    def __init__(self, bytes_: bytes = None, type_: MediaType = None, extension: str = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
         pass
 
     @overload
-    def __init__(self, url: str | pathlib.Path = None, bytes_: bytes = None, type_: MediaType = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
+    def __init__(self, url: str | pathlib.Path = None, bytes_: bytes = None, type_: MediaType = None, extension: str = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
         pass
 
     @overload
-    def __init__(self, bytes_: bytes = None, url: str | pathlib.Path = None, type_: MediaType = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
+    def __init__(self, bytes_: bytes = None, url: str | pathlib.Path = None, type_: MediaType = None, extension: str = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
         pass
 
     def __init__(self, *args, **kwargs):
@@ -43,7 +44,7 @@ class Media(FlanaBase):
         self.url = iterables.find(main_ars, str | pathlib.Path)
         self.bytes_ = iterables.find(reversed(main_ars), bytes)
 
-        rest_attributes_names = ('type_', 'source', 'title', 'author', 'album', 'song_info')
+        rest_attributes_names = ('type_', 'extension', 'source', 'title', 'author', 'album', 'song_info')
         for attributes_name, arg in zip(rest_attributes_names, itertools.dropwhile(lambda arg_: isinstance(arg_, str | bytes), args)):
             setattr(self, attributes_name, arg)
 
@@ -52,6 +53,9 @@ class Media(FlanaBase):
             self.url = str(self.url)
         self.bytes_ = kwargs.get('bytes_') or self.bytes_
         self.type_ = kwargs.get('type_') or self.type_
+        self.extension = kwargs.get('extension') or self.extension
+        if not self.extension:
+            self.extension = self.type_.default_extension
         self.source = kwargs.get('source') or self.source
         self.title = kwargs.get('title') or self.title
         self.author = kwargs.get('author') or self.author
