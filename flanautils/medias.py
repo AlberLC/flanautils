@@ -23,7 +23,7 @@ async def mp4_to_gif(bytes_: bytes) -> bytes:
     return stdout
 
 
-async def video_to_audio(media: Media) -> Media:
+async def video_to_audio(media: Media, bitrate=192, sample_rate=44100, channels=2) -> Media:
     if media.type_ is not MediaType.VIDEO or not media.content:
         return media
 
@@ -33,7 +33,7 @@ async def video_to_audio(media: Media) -> Media:
         media.bytes_ = await asyncs.get_request(media.url)
 
     process = await asyncio.create_subprocess_exec(
-        'ffmpeg', '-y', '-i', 'pipe:', '-b:a', '192k', '-ar', '44100', '-ac', '2', '-f', 'mp3', 'pipe:',
+        'ffmpeg', '-i', 'pipe:', '-b:a', f'{bitrate}k', '-ar', str(sample_rate), '-ac', str(channels), '-f', 'mp3', 'pipe:',
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE
