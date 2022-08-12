@@ -2,6 +2,10 @@ import asyncio
 import platform
 import subprocess
 
+from flanautils import asyncs
+from flanautils.models.enums import MediaType
+from flanautils.models.media import Media
+
 
 async def mp4_to_gif(bytes_: bytes) -> bytes:
     """Convert video in mp4 format given in bytes into video in gif format using FFmpeg."""
@@ -17,3 +21,28 @@ async def mp4_to_gif(bytes_: bytes) -> bytes:
     stdout, _ = await process.communicate(bytes_)
 
     return stdout
+
+
+async def video_to_audio(media: Media) -> Media:
+    if media.type_ is not MediaType.VIDEO or not media.content:
+        return media
+
+    media = media.deep_copy()
+
+    if not media.bytes_:
+        media.bytes_ = await asyncs.get_request(media.url)
+
+    process = await asyncio.create_subprocess_exec(
+        'ffmpeg', '-y', '-i', 'pipe:', '-b:a', '192k', '-ar', '44100', '-ac', '2', '-f', 'mp3', 'pipe:',
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    stdout, _ = await process.communicate(media.bytes_)
+    media.bytes_ = stdout
+
+    media.url = None
+    media.type_ = MediaType.AUDIO
+    media.extension = 'mp3'
+
+    return media
