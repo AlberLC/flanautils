@@ -8,7 +8,7 @@ from collections import defaultdict
 import flanautils
 
 
-async def add_metadata(bytes_: bytes, metadata: dict, overwrite=True) -> bytes:
+async def edit_metadata(bytes_: bytes, metadata: dict, overwrite=True) -> bytes:
     if (await get_metadata(bytes_))['title'] and not overwrite:
         return bytes_
 
