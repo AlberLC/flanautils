@@ -78,13 +78,9 @@ async def to_gif(bytes_: bytes) -> bytes:
     return stdout
 
 
-async def to_mp3(bytes_: bytes, bitrate=192, sample_rate=44100, channels=2, title=None) -> bytes:
-    args = ['ffmpeg', '-i', 'pipe:', '-b:a', f'{bitrate}k', '-ar', str(sample_rate), '-ac', str(channels), '-f', 'mp3']
-    if title:
-        args.extend(('-metadata', f'title={title}'))
-    args.append('pipe:')
+async def to_mp3(bytes_: bytes, bitrate=192, sample_rate=44100, channels=2) -> bytes:
     process = await asyncio.create_subprocess_exec(
-        *args,
+        'ffmpeg', '-i', 'pipe:', '-b:a', f'{bitrate}k', '-ar', str(sample_rate), '-ac', str(channels), '-f', 'mp3', 'pipe:',
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE
