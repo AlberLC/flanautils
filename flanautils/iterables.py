@@ -54,11 +54,12 @@ def filter(elements: Iterable, target: Any = None, condition: Callable[..., bool
             def condition(element: Any) -> bool:
                 return element == target
 
-    generator_ = (final_element for element in elements if condition(final_element := strings.cast_number(element, raise_exception=False) if cast_numbers else element))
-    if lazy:
-        return generator_
+    if cast_numbers:
+        generator_ = (final_element for element in elements if condition(final_element := strings.cast_number(element, raise_exception=False)))
     else:
-        return list(generator_)
+        generator_ = (element for element in elements if condition(element))
+
+    return generator_ if lazy else list(generator_)
 
 
 def filter_exceptions(elements: Iterable) -> tuple[list, list[BaseException]]:
