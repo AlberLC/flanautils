@@ -3,6 +3,18 @@ from enum import auto
 from flanautils.models.bases import FlanaEnum
 
 
+class HTTPMethod(FlanaEnum):
+    DELETE = auto()
+    CONNECT = auto()
+    GET = auto()
+    HEAD = auto()
+    OPTIONS = auto()
+    PATCH = auto()
+    POST = auto()
+    PUT = auto()
+    TRACE = auto()
+
+
 class MediaType(FlanaEnum):
     AUDIO = auto()
     ERROR = auto()

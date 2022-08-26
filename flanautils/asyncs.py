@@ -7,8 +7,10 @@ from typing import Callable, Iterable, Type
 
 import aiohttp
 import aiohttp.client_exceptions
+import yarl
 
 from flanautils.exceptions import ResponseError
+from flanautils.models.enums import HTTPMethod
 
 
 async def do_every(
@@ -74,7 +76,7 @@ async def do_later(
     return asyncio.create_task(do_later_())
 
 
-async def request(http_method, url: str, params: dict = None, headers: dict = None, data: dict = None, session: aiohttp.ClientSession = None, return_response=False, intents=5) -> bytes | str | list | dict | aiohttp.ClientResponse:
+async def request(http_method: str, url: str, params: dict = None, headers: dict = None, data: dict = None, session: aiohttp.ClientSession = None, return_response=False, intents=5) -> bytes | str | list | dict | aiohttp.ClientResponse:
     """
     Function that simplifies asynchronous http requests with aiohttp.
 
@@ -87,9 +89,9 @@ async def request(http_method, url: str, params: dict = None, headers: dict = No
 
     session_ = session or aiohttp.ClientSession()
 
-    if http_method == 'get':
+    if http_method is HTTPMethod.GET:
         http_method = session_.get
-    elif http_method == 'post':
+    elif http_method is HTTPMethod.POST:
         http_method = session_.post
     else:
         raise ValueError('Bad http method.')
@@ -100,7 +102,7 @@ async def request(http_method, url: str, params: dict = None, headers: dict = No
 
         for intent in range(intents):
             try:
-                async with http_method(url, params=params, headers=headers, data=data) as response:
+                async with http_method(yarl.URL(url, encoded=True), params=params, headers=headers, data=data) as response:
                     if return_response:
                         return response
                     if response.status != 200:
@@ -121,5 +123,5 @@ async def request(http_method, url: str, params: dict = None, headers: dict = No
             await session_.close()
 
 
-get_request = functools.partial(request, 'get')
-post_request = functools.partial(request, 'post')
+get_request = functools.partial(request, HTTPMethod.GET)
+post_request = functools.partial(request, HTTPMethod.POST)

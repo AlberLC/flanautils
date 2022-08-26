@@ -1,7 +1,7 @@
 import random
 from typing import Iterable
 
-import strings
+from flanautils import strings
 
 
 def random_elements(k=1) -> list:
