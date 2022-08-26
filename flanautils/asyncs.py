@@ -76,7 +76,7 @@ async def do_later(
     return asyncio.create_task(do_later_())
 
 
-async def request(http_method: str, url: str, params: dict = None, headers: dict = None, data: dict = None, session: aiohttp.ClientSession = None, return_response=False, intents=5) -> bytes | str | list | dict | aiohttp.ClientResponse:
+async def request(http_method: HTTPMethod, url: str, params: dict = None, headers: dict = None, data: dict = None, session: aiohttp.ClientSession = None, return_response=False, intents=5) -> bytes | str | list | dict | aiohttp.ClientResponse:
     """
     Function that simplifies asynchronous http requests with aiohttp.
 
