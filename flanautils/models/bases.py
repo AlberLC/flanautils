@@ -93,7 +93,7 @@ class DictBase:
 
         return decode_dict(cls, data)
 
-    def to_dict(self, pickle_types: tuple | list = (), recursive=False) -> Any:
+    def to_dict(self, pickle_types: tuple | list = ()) -> Any:
         """Returns the representation of the object as a dictionary."""
 
         def encode_obj(obj_) -> Any:
@@ -391,7 +391,14 @@ class MongoBase(DictBase, BytesBase):
         self.collection.delete_one({'_id': self._id})
 
     @classmethod
-    def find(cls, query: dict = None, sort_keys: str | Iterable[str | tuple[str, int]] = (), lazy=False) -> Iterator | list:
+    def find(
+        cls,
+        query: dict = None,
+        sort_keys: str | Iterable[str | tuple[str, int]] = (),
+        skip: int = None,
+        limit: int = None,
+        lazy=False
+    ) -> Iterator | list:
         """Query the collection."""
 
         def find_generator() -> Iterator:
@@ -406,7 +413,12 @@ class MongoBase(DictBase, BytesBase):
             case [*_]:
                 sort_keys = [(sort_key, pymongo.ASCENDING) for sort_key in sort_keys]
 
-        cursor: pymongo.cursor.Cursor = cls.collection.find(query)
+        kwargs = {}
+        if skip is not None:
+            kwargs['skip'] = skip
+        if limit is not None:
+            kwargs['limit'] = limit
+        cursor: pymongo.cursor.Cursor = cls.collection.find(query, **kwargs)
         if sort_keys:
             cursor.sort(sort_keys)
 
