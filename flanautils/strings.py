@@ -324,10 +324,11 @@ def sum_numbers_in_text(text: str, language='es') -> int:
     6.7
     """
 
+    strip_characters = ''.join((*{*constants.SYMBOLS} - {'-'}, 'ç'))
     n = 0
     for word in text.split():
         try:
-            n += cast_number(word.strip(''.join((*{*constants.SYMBOLS} - {'-'}, 'ç'))))
+            n += cast_number(word.strip(strip_characters))
         except ValueError:
             n += words_to_numbers(word, language=language)
 
