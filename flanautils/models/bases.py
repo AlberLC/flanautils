@@ -278,10 +278,12 @@ class MongoBase(DictBase, BytesBase):
     """
 
     _id: ObjectId = None
-    _database: pymongo.database.Database = None
-    _unique_keys: str | Iterable[str] = ()
-    _nullable_unique_keys: str | Iterable[str] = ()
+    subclasses: list = []
+    database: pymongo.database.Database = None
+    collection_name: str = None
     collection: pymongo.collection.Collection = None
+    unique_keys: str | Iterable[str] = ()
+    nullable_unique_keys: str | Iterable[str] = ()
 
     def __init__(self):
         """Automatically generate an ObjectId and store references to the database and collection."""
@@ -294,15 +296,10 @@ class MongoBase(DictBase, BytesBase):
             case _:
                 super().__setattr__('_id', ObjectId())
 
-        if self.collection is not None:
-            super().__setattr__('collection', self.collection)
-            super().__setattr__('_database', self.collection.database)
-        if isinstance(self._unique_keys, str):
-            super().__setattr__('_unique_keys', (self._unique_keys,))
-        if isinstance(self._nullable_unique_keys, str):
-            super().__setattr__('_nullable_unique_keys', (self._nullable_unique_keys,))
-
         self._create_unique_indices()
+
+    def __init_subclass__(cls, **kwargs):
+        MongoBase.subclasses.append(cls)
 
     def __post_init__(self):
         MongoBase.__init__(self)
@@ -351,26 +348,23 @@ class MongoBase(DictBase, BytesBase):
             return hash(self._id)
 
     def _create_unique_indices(self):
-        """Create the unique indices in the database based on _unique_keys and _nullable_unique_keys attributes."""
+        """Create the unique indices in the database based on unique_keys and nullable_unique_keys attributes."""
 
-        if not self._unique_keys:
+        if not self.unique_keys:
             return
 
-        unique_keys = [(unique_key, pymongo.ASCENDING) for unique_key in self._unique_keys]
+        unique_keys = [(unique_key, pymongo.ASCENDING) for unique_key in self.unique_keys]
         type_filter = {'$type': ['number', 'string', 'object', 'array', 'binData', 'objectId', 'bool', 'date', 'regex',
                                  'javascript', 'regex', 'timestamp', 'minKey', 'maxKey']}
-        partial_unique_filter = {nullable_unique_key: type_filter for nullable_unique_key in self._nullable_unique_keys}
+        partial_unique_filter = {nullable_unique_key: type_filter for nullable_unique_key in self.nullable_unique_keys}
 
         self.collection.create_index(unique_keys, partialFilterExpression=partial_unique_filter, unique=True)
-
-    def _dict_repr(self) -> Any:
-        return {k: v for k, v in vars(self).items() if k not in ('_database', '_unique_keys', '_nullable_unique_keys', 'collection')}
 
     def _json_repr(self) -> Any:
         self_vars = vars(self).copy()
         self_vars['_id'] = repr(self_vars['_id'])
 
-        return {k: v for k, v in self_vars.items() if k not in ('_database', '_unique_keys', '_nullable_unique_keys', 'collection')}
+        return self_vars
 
     def _mongo_repr(self) -> Any:
         """Returns the object representation to save in mongo database."""
@@ -436,7 +430,7 @@ class MongoBase(DictBase, BytesBase):
     def find_in_database_by_id(self, object_id: ObjectId) -> dict | None:
         """Find an object in all database collections by its ObjectId."""
 
-        collections = (self._database[name] for name in self._database.list_collection_names())
+        collections = (self.database[name] for name in self.database.list_collection_names())
         return next((document for collection in collections if (document := collection.find_one({'_id': object_id}))), None)
 
     @classmethod
@@ -459,6 +453,17 @@ class MongoBase(DictBase, BytesBase):
                     referenced_objects.extend(obj for obj in objs if isinstance(obj, MongoBase))
 
         return referenced_objects
+
+    @classmethod
+    def init_database_attributes(cls, db: pymongo.database.Database):
+        for subclass in MongoBase.subclasses:
+            if subclass.collection_name is not None:
+                subclass.database = db
+                subclass.collection = db[subclass.collection_name]
+            if isinstance(subclass.unique_keys, str):
+                subclass.unique_keys = (subclass.unique_keys,)
+            if isinstance(subclass.nullable_unique_keys, str):
+                subclass.nullable_unique_keys = (subclass.nullable_unique_keys,)
 
     @property
     def object_id(self):
@@ -579,7 +584,7 @@ class MongoBase(DictBase, BytesBase):
         """
 
         unique_attributes = {}
-        for unique_key in self._unique_keys:
+        for unique_key in self.unique_keys:
             attribute_value = getattr(self, unique_key, None)
             unique_attributes[unique_key] = attribute_value.value if isinstance(attribute_value, Enum) else attribute_value
 
