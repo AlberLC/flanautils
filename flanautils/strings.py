@@ -402,10 +402,10 @@ def words_to_time(text: str, language='es') -> datetime.timedelta:
                 delta_time += datetime.timedelta(weeks=n)
                 n = 0
             elif jellyfish.jaro_winkler_similarity(word, 'mes') >= constants.TIME_UNITS_RATIO_MATCHING:
-                delta_time += datetime.timedelta(weeks=n * 4.34524)
+                delta_time += datetime.timedelta(weeks=n * constants.WEEKS_IN_A_MONTH)
                 n = 0
             elif jellyfish.jaro_winkler_similarity(word, 'año') >= constants.TIME_UNITS_RATIO_MATCHING:
-                delta_time += datetime.timedelta(weeks=n * 52.1429)
+                delta_time += datetime.timedelta(weeks=n * constants.WEEKS_IN_A_YEAR)
                 n = 0
             else:
                 n += sum_numbers_in_text(word)

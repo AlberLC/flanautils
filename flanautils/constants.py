@@ -17,6 +17,7 @@ NUMBER_WORDS = {
 NUMBERS_RATIO_MATCHING = 0.9
 TIME_UNITS_RATIO_MATCHING = 0.9
 WEEKS_IN_A_MONTH = 4.34524
+WEEKS_IN_A_YEAR = WEEKS_IN_A_MONTH * 12
 SYMBOLS = ('!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@',
            '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~', '¡', '¨', 'ª', '¬', '´', '·', 'º', '¿', '€')
 
