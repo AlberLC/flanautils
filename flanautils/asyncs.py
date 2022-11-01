@@ -32,6 +32,11 @@ async def do_every(
 
     if isinstance(seconds, datetime.timedelta):
         seconds = seconds.total_seconds()
+    if asyncio.iscoroutinefunction(func):
+        func_ = func
+    else:
+        async def func_(*args_, **kwargs_):
+            return func(*args_, **kwargs_)
     if not isinstance(exceptions_to_ignore, Iterable):
         exceptions_to_ignore = (exceptions_to_ignore,)
 
@@ -39,7 +44,7 @@ async def do_every(
         count = 0
         while while_ and (times is None or count < times):
             try:
-                await func(*args, **kwargs)
+                await func_(*args, **kwargs)
             except (*exceptions_to_ignore,):
                 pass
             count += 1
@@ -69,7 +74,7 @@ async def do_later(
     async def do_later_():
         await asyncio.sleep(seconds)
         try:
-            return await func(*args, **kwargs)
+            return await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
         except (*exceptions_to_ignore,):
             pass
 
