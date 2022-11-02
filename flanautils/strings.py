@@ -382,9 +382,10 @@ def words_to_time(text: str, language='es') -> datetime.timedelta:
     datetime.timedelta(seconds=70)
     """
 
+    delta_time = datetime.timedelta()
+    n = 0
+
     if language == 'es':
-        delta_time = datetime.timedelta()
-        n = 0
         for word in text.split():
             if jellyfish.jaro_winkler_similarity(word, 'segundo') >= constants.TIME_UNITS_RATIO_MATCHING:
                 delta_time += datetime.timedelta(seconds=n)
