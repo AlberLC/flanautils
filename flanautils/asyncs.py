@@ -26,7 +26,7 @@ async def do_every(
 
     You can specify a number of times.
 
-    Exceptions specified in exceptions_to_capture are returned if raised.
+    Exceptions specified in exceptions_to_capture are returned if raised when the task is completed.
     """
 
     if isinstance(seconds, datetime.timedelta):
