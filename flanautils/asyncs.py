@@ -3,7 +3,7 @@ import datetime
 import functools
 import html
 from asyncio import Task
-from typing import Callable, Iterable, Type
+from typing import Any, Callable, Iterable, Type
 
 import aiohttp
 import aiohttp.client_exceptions
@@ -14,69 +14,75 @@ from flanautils.models.enums import HTTPMethod
 
 
 async def do_every(
-    seconds: int | datetime.timedelta,
+    seconds: int | float | datetime.timedelta,
     func: Callable,
     *args,
-    exceptions_to_ignore: Type[BaseException] | Iterable[Type[BaseException]] = (),
     times: int = None,
-    while_: bool = True,
+    exceptions_to_capture: Type[BaseException] | Iterable[Type[BaseException]] = (),
     **kwargs
 ) -> Task:
     """
     Corutine function that runs the function every time provided in seconds or datetime.timedelta.
 
-    You can specify a number of times and a stop condition.
+    You can specify a number of times.
 
-    Exceptions specified in exceptions_to_ignore are ignored if raised.
+    Exceptions specified in exceptions_to_capture are returned if raised.
     """
 
     if isinstance(seconds, datetime.timedelta):
         seconds = seconds.total_seconds()
-    if asyncio.iscoroutinefunction(func):
-        func_ = func
-    else:
-        async def func_(*args_, **kwargs_):
-            return func(*args_, **kwargs_)
-    if not isinstance(exceptions_to_ignore, Iterable):
-        exceptions_to_ignore = (exceptions_to_ignore,)
+    if not isinstance(exceptions_to_capture, Iterable):
+        exceptions_to_capture = (exceptions_to_capture,)
+
+    async def do_() -> Any:
+        return await result if asyncio.iscoroutine(result := func(*args, **kwargs)) else result
 
     async def do_every_():
-        count = 0
-        while while_ and (times is None or count < times):
-            try:
-                await func_(*args, **kwargs)
-            except (*exceptions_to_ignore,):
-                pass
-            count += 1
-            await asyncio.sleep(seconds)
+        if times is None:
+            while True:
+                try:
+                    await do_()
+                except (*exceptions_to_capture,):
+                    pass
+                await asyncio.sleep(seconds)
+        else:
+            results = []
+            while True:
+                try:
+                    results.append(await do_())
+                except (*exceptions_to_capture,) as e:
+                    results.append(e)
+                if len(results) == times:
+                    return results
+                await asyncio.sleep(seconds)
 
     return asyncio.create_task(do_every_())
 
 
 async def do_later(
-    seconds: int | datetime.timedelta,
+    seconds: int | float | datetime.timedelta,
     func: Callable,
     *args,
-    exceptions_to_ignore: Type[BaseException] | Iterable[Type[BaseException]] = (),
+    exceptions_to_capture: Type[BaseException] | Iterable[Type[BaseException]] = (),
     **kwargs
 ) -> Task:
     """
     Corutine function that executes the function after a time provided in seconds or datetime.timedelta.
 
-    Exceptions specified in exceptions_to_ignore are ignored if raised.
+    Exceptions specified in exceptions_to_capture are returned if raised.
     """
 
     if isinstance(seconds, datetime.timedelta):
         seconds = seconds.total_seconds()
-    if not isinstance(exceptions_to_ignore, Iterable):
-        exceptions_to_ignore = (exceptions_to_ignore,)
+    if not isinstance(exceptions_to_capture, Iterable):
+        exceptions_to_capture = (exceptions_to_capture,)
 
     async def do_later_():
         await asyncio.sleep(seconds)
         try:
-            return await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
-        except (*exceptions_to_ignore,):
-            pass
+            return await result if asyncio.iscoroutine(result := func(*args, **kwargs)) else result
+        except (*exceptions_to_capture,) as e:
+            return e
 
     return asyncio.create_task(do_later_())
 
