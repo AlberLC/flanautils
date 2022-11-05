@@ -342,7 +342,7 @@ def sum_numbers_in_text(text: str | Iterable[str], language='es') -> int:
 
 def words_to_numbers(text: str, ignore_no_numbers=True, language='es') -> int:
     """
-    Convert all numbers in textual representation, according to the language, into an integer and return the sum of
+    Convert all numbers in textual representation, according to the language, into a number and return the sum of
     them.
 
     >>> words_to_numbers('Borra veintidos mensajes. Y... luego borra otros treinta y cinco.')
