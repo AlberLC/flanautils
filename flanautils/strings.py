@@ -314,7 +314,7 @@ def str_to_class(class_names: str | Type | Iterable[str | Type], globals_: dict)
         return tuple(globals_[class_name] for class_name in class_names)
 
 
-def sum_numbers_in_text(text: str, language='es') -> int:
+def sum_numbers_in_text(text: str | Iterable[str], language='es') -> int:
     """
     Add all the existing numbers in a text, whether they are in numerical or textual form.
 
@@ -324,9 +324,14 @@ def sum_numbers_in_text(text: str, language='es') -> int:
     6.7
     """
 
+    if isinstance(text, str):
+        words = text.split()
+    else:
+        words = text
+
     strip_characters = ''.join((*{*constants.SYMBOLS} - {'-'}, 'ç'))
     n = 0
-    for word in text.split():
+    for word in words:
         try:
             n += cast_number(word.strip(strip_characters))
         except ValueError:
@@ -374,7 +379,7 @@ def words_to_numbers(text: str, ignore_no_numbers=True, language='es') -> int:
     raise NotImplementedError('not implemented for that language')
 
 
-def words_to_time(text: str, language='es') -> datetime.timedelta:
+def words_to_time(text: str | Iterable[str], language='es') -> datetime.timedelta:
     """
     Convert time in textual representation, according to the language, into a datetime.timedelta.
 
@@ -382,11 +387,16 @@ def words_to_time(text: str, language='es') -> datetime.timedelta:
     datetime.timedelta(seconds=70)
     """
 
+    if isinstance(text, str):
+        words = text.split()
+    else:
+        words = text
+
     delta_time = datetime.timedelta()
     n = 0
 
     if language == 'es':
-        for word in text.split():
+        for word in words:
             if jellyfish.jaro_winkler_similarity(word, 'segundo') >= constants.TIME_UNITS_RATIO_MATCHING:
                 delta_time += datetime.timedelta(seconds=n)
                 n = 0
