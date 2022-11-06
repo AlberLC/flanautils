@@ -122,7 +122,7 @@ def join_last_separator(elements: Iterable, separator: str, last_separator: str,
 
 def numbers_to_words(number: int, language='es') -> str:
     """
-    Convert an integer into its textual representation according to the language.
+    Convert an integer into its textual representation.
 
     >>> numbers_to_words(7)
     'siete'
@@ -342,8 +342,7 @@ def sum_numbers_in_text(text: str | Iterable[str], language='es') -> int:
 
 def words_to_numbers(text: str, ignore_no_numbers=True, language='es') -> int:
     """
-    Convert all numbers in textual representation, according to the language, into a number and return the sum of
-    them.
+    Convert numbers from text to numeric and return the sum of them.
 
     >>> words_to_numbers('Borra veintidos mensajes. Y... luego borra otros treinta y cinco.')
     57
@@ -381,7 +380,7 @@ def words_to_numbers(text: str, ignore_no_numbers=True, language='es') -> int:
 
 def words_to_time(text: str | Iterable[str], language='es') -> datetime.timedelta:
     """
-    Convert time in textual representation, according to the language, into a datetime.timedelta.
+    Convert time in textual representation into a datetime.timedelta.
 
     >>> words_to_time('Un minuto y 10 segundos.')
     datetime.timedelta(seconds=70)
