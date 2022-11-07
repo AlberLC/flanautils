@@ -11,7 +11,7 @@ import jellyfish
 import unicodedata
 
 from flanautils import constants, iterables
-from flanautils.models.ratio_match import RatioMatch
+from flanautils.models.ratio_match import ScoreMatch
 
 
 def cartesian_product_string_matching(a_text: str | Iterable[str], b_text: str | Iterable[str], min_ratio: float = 0) -> dict[dict[str, float]]:
@@ -366,10 +366,10 @@ def words_to_numbers(text: str, ignore_no_numbers=True, language='es') -> int:
             for number_word in number_words_es.values():
                 ratio = jellyfish.jaro_winkler_similarity(word, number_word)
                 if ratio >= constants.NUMBERS_RATIO_MATCHING:
-                    word_possible_matches.append(RatioMatch(number_words_es[number_word], ratio))
+                    word_possible_matches.append(ScoreMatch(number_words_es[number_word], ratio))
 
             if word_possible_matches:
-                n += sign_ * max(word_possible_matches, key=lambda match: match.ratio).element
+                n += sign_ * max(word_possible_matches, key=lambda match: match.score).element
             elif not ignore_no_numbers:
                 raise KeyError(word)
 
