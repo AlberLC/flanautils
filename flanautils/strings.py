@@ -11,10 +11,10 @@ import jellyfish
 import unicodedata
 
 from flanautils import constants, iterables
-from flanautils.models.ratio_match import ScoreMatch
+from flanautils.models.score_match import ScoreMatch
 
 
-def cartesian_product_string_matching(a_text: str | Iterable[str], b_text: str | Iterable[str], min_ratio: float = 0) -> dict[dict[str, float]]:
+def cartesian_product_string_matching(a_text: str | Iterable[str], b_text: str | Iterable[str], min_score: float = 0) -> dict[dict[str, float]]:
     """
     Compare between all the strings of the first iterable with all of the second (cartesian product) and returns a
     dictionary with the scores.
@@ -22,7 +22,7 @@ def cartesian_product_string_matching(a_text: str | Iterable[str], b_text: str |
 
     a_words = a_text.split() if isinstance(a_text, str) else a_text
     b_words = b_text.split() if isinstance(b_text, str) else b_text
-    return {a_word: matches for a_word in a_words if (matches := {b_word: ratio for b_word in b_words if (ratio := jellyfish.jaro_winkler_similarity(a_word, b_word)) >= min_ratio})}
+    return {a_word: matches for a_word in a_words if (matches := {b_word: score for b_word in b_words if (score := jellyfish.jaro_winkler_similarity(a_word, b_word)) >= min_score})}
 
 
 def cast_number(text: str, raise_exception=True) -> int | float | str:
@@ -358,15 +358,15 @@ def words_to_numbers(text: str, ignore_no_numbers=True, language='es') -> int:
         n = 0
         sign_ = 1
         for word in words:
-            if jellyfish.jaro_winkler_similarity(word, number_words_es['-']) >= constants.NUMBERS_RATIO_MATCHING:
+            if jellyfish.jaro_winkler_similarity(word, number_words_es['-']) >= constants.NUMBERS_SCORE_MATCHING:
                 sign_ = -1
                 continue
 
             word_possible_matches = []
             for number_word in number_words_es.values():
-                ratio = jellyfish.jaro_winkler_similarity(word, number_word)
-                if ratio >= constants.NUMBERS_RATIO_MATCHING:
-                    word_possible_matches.append(ScoreMatch(number_words_es[number_word], ratio))
+                score = jellyfish.jaro_winkler_similarity(word, number_word)
+                if score >= constants.NUMBERS_SCORE_MATCHING:
+                    word_possible_matches.append(ScoreMatch(number_words_es[number_word], score))
 
             if word_possible_matches:
                 n += sign_ * max(word_possible_matches, key=lambda match: match.score).element
@@ -396,25 +396,25 @@ def words_to_time(text: str | Iterable[str], language='es') -> datetime.timedelt
 
     if language == 'es':
         for word in words:
-            if jellyfish.jaro_winkler_similarity(word, 'segundo') >= constants.TIME_UNITS_RATIO_MATCHING:
+            if jellyfish.jaro_winkler_similarity(word, 'segundo') >= constants.TIME_UNITS_SCORE_MATCHING:
                 delta_time += datetime.timedelta(seconds=n)
                 n = 0
-            elif jellyfish.jaro_winkler_similarity(word, 'minuto') >= constants.TIME_UNITS_RATIO_MATCHING or jellyfish.jaro_winkler_similarity(word, 'min') >= constants.TIME_UNITS_RATIO_MATCHING:
+            elif jellyfish.jaro_winkler_similarity(word, 'minuto') >= constants.TIME_UNITS_SCORE_MATCHING or jellyfish.jaro_winkler_similarity(word, 'min') >= constants.TIME_UNITS_SCORE_MATCHING:
                 delta_time += datetime.timedelta(minutes=n)
                 n = 0
-            elif jellyfish.jaro_winkler_similarity(word, 'hora') >= constants.TIME_UNITS_RATIO_MATCHING:
+            elif jellyfish.jaro_winkler_similarity(word, 'hora') >= constants.TIME_UNITS_SCORE_MATCHING:
                 delta_time += datetime.timedelta(hours=n)
                 n = 0
-            elif jellyfish.jaro_winkler_similarity(word, 'dia') >= constants.TIME_UNITS_RATIO_MATCHING:
+            elif jellyfish.jaro_winkler_similarity(word, 'dia') >= constants.TIME_UNITS_SCORE_MATCHING:
                 delta_time += datetime.timedelta(days=n)
                 n = 0
-            elif jellyfish.jaro_winkler_similarity(word, 'semana') >= constants.TIME_UNITS_RATIO_MATCHING:
+            elif jellyfish.jaro_winkler_similarity(word, 'semana') >= constants.TIME_UNITS_SCORE_MATCHING:
                 delta_time += datetime.timedelta(weeks=n)
                 n = 0
-            elif jellyfish.jaro_winkler_similarity(word, 'mes') >= constants.TIME_UNITS_RATIO_MATCHING:
+            elif jellyfish.jaro_winkler_similarity(word, 'mes') >= constants.TIME_UNITS_SCORE_MATCHING:
                 delta_time += datetime.timedelta(weeks=n * constants.WEEKS_IN_A_MONTH)
                 n = 0
-            elif jellyfish.jaro_winkler_similarity(word, 'año') >= constants.TIME_UNITS_RATIO_MATCHING:
+            elif jellyfish.jaro_winkler_similarity(word, 'año') >= constants.TIME_UNITS_SCORE_MATCHING:
                 delta_time += datetime.timedelta(weeks=n * constants.WEEKS_IN_A_YEAR)
                 n = 0
             else:

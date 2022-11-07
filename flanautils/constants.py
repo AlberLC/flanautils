@@ -14,15 +14,14 @@ NUMBER_WORDS = {
         100: 'cien'
     })
 }
-NUMBERS_RATIO_MATCHING = 0.9
-TIME_UNITS_RATIO_MATCHING = 0.9
-WEEKS_IN_A_MONTH = 4.34524
-WEEKS_IN_A_YEAR = WEEKS_IN_A_MONTH * 12
+NUMBERS_SCORE_MATCHING = 0.9
 SYMBOLS = ('!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@',
            '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~', '¡', '¨', 'ª', '¬', '´', '·', 'º', '¿', '€')
+TIME_UNITS_SCORE_MATCHING = 0.9
+WEEKS_IN_A_MONTH = 4.34524
+WEEKS_IN_A_YEAR = WEEKS_IN_A_MONTH * 12
 
 
-# noinspection PyPropertyDefinition
 class CommonWords:
     common_words = {
         'en': {
