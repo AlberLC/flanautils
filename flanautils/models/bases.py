@@ -45,11 +45,11 @@ class CopyBase:
 
 
 class DictBase:
-    """Base class for serialize objects to dict."""
+    """Base class for serialize objects to dictionaries."""
 
     def _dict_repr(self) -> Any:
         """
-        Returns the dict representation of your object.
+        Returns the dictionary representation of your object.
 
         It is the only method that you would want to redefine in most cases to represent data.
         """
@@ -119,7 +119,7 @@ class DictBase:
 
 
 class JSONBASE:
-    """Base class for serialize objects to json."""
+    """Base class for serialize objects to JSON."""
 
     def _json_repr(self) -> Any:
         """
@@ -207,7 +207,7 @@ class JSONBASE:
 
 
 class MeanBase:
-    """Base class for calulate the mean of objects."""
+    """Base class for calculate the mean of objects."""
 
     @classmethod
     def mean(cls, objects: Sequence, ratios: list[float] = None, attribute_names: Iterable[str] = ()) -> MeanBase:
@@ -286,8 +286,6 @@ class MongoBase(DictBase, BytesBase):
     nullable_unique_keys: str | Iterable[str] = ()
 
     def __init__(self):
-        """Automatically generate an ObjectId and store references to the database and collection."""
-
         match self._id:
             case str() if self._id:
                 super().__setattr__('_id', ObjectId(self._id))
@@ -375,7 +373,7 @@ class MongoBase(DictBase, BytesBase):
         """
         Delete the object from the database.
 
-        If cascade=True all objects whose classes inherit from MongoBase are also deleted.
+        If cascade=True all referenced objects whose classes inherit from MongoBase are also deleted.
         """
 
         if cascade:
@@ -456,6 +454,8 @@ class MongoBase(DictBase, BytesBase):
 
     @classmethod
     def init_database_attributes(cls, db: pymongo.database.Database):
+        """Initializes the attributes needed to connect the object to the database."""
+
         for subclass in MongoBase.subclasses:
             if subclass.collection_name is not None:
                 subclass.database = db
@@ -634,7 +634,7 @@ class FlanaEnum(JSONBASE, DictBase, CopyBase, BytesBase, Enum):
 
     @classmethod
     @property
-    def items(cls) -> list[tuple[str, int]]:
+    def items(cls) -> list[tuple[str, Any]]:
         # noinspection PyTypeChecker
         return [item for item in zip(cls.keys, cls.values)]
 
@@ -645,5 +645,5 @@ class FlanaEnum(JSONBASE, DictBase, CopyBase, BytesBase, Enum):
 
     @classmethod
     @property
-    def values(cls) -> list[int]:
+    def values(cls) -> list:
         return [element.value for element in cls]
