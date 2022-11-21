@@ -222,17 +222,27 @@ def read_file(path: str | pathlib.Path) -> str | None:
 
 def remove_accents(text: str, ignore: Iterable = ('ñ', 'ç')) -> str:
     """
-    Encode the string to remove the accents from non ascii characters.
+    Removes the accents from the string.
 
     Ignore the characters contained in ignore argument. By default ignore=('ñ', 'ç').
 
     >>> remove_accents('aáeèiîoöuuºªçñ')
-    'aaeeiioouuçñ'
-    >>> remove_accents('Mañana iba a salir pero el otro día iba por la calle y casi me atropella un camión que iba muy rápido.')
-    'Mañana iba a salir pero el otro dia iba por la calle y casi me atropella un camion que iba muy rapido.'
+    'aaeeiioouuºªçñ'
+    >>> remove_accents('👉🏻Mañana iba a salir pero el otro día iba por la calle y casi me atropella un camión 🚛 que iba muy rápido.')
+    '👉🏻Mañana iba a salir pero el otro dia iba por la calle y casi me atropella un camion 🚛 que iba muy rapido.'
     """
 
-    return ''.join(char if char in ignore else unicodedata.normalize('NFD', char).encode('ascii', 'ignore').decode() for char in text)
+    def remove_accents_generator():
+        for char in text:
+            if char in ignore:
+                yield char
+            else:
+                normalize_chars = unicodedata.normalize('NFD', char)
+                for normalize_char in normalize_chars:
+                    if unicodedata.category(normalize_char) != 'Mn':
+                        yield normalize_char
+
+    return ''.join(remove_accents_generator())
 
 
 def remove_symbols(text: str, ignore: Iterable = (), replace_with='') -> str:
