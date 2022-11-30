@@ -18,7 +18,7 @@ async def do_every(
     func: Callable,
     *args,
     times: int = None,
-    exceptions_to_capture: Type[BaseException] | Iterable[Type[BaseException]] = (),
+    exceptions_to_capture: Type[Exception] | Iterable[Type[Exception]] = (),
     **kwargs
 ) -> Task:
     """
@@ -63,7 +63,7 @@ async def do_later(
     seconds: int | float | datetime.timedelta,
     func: Callable,
     *args,
-    exceptions_to_capture: Type[BaseException] | Iterable[Type[BaseException]] = (),
+    exceptions_to_capture: Type[Exception] | Iterable[Type[Exception]] = (),
     **kwargs
 ) -> Task:
     """

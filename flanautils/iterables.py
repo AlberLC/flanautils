@@ -62,14 +62,14 @@ def filter(elements: Iterable, target: Any = None, condition: Callable[..., bool
     return generator_ if lazy else list(generator_)
 
 
-def filter_exceptions(elements: Iterable) -> tuple[list, list[BaseException]]:
+def filter_exceptions(elements: Iterable) -> tuple[list, list[Exception]]:
     """Filters the exceptions of the iterable and returns a tuple with the separated results."""
 
     exceptions_ = []
     no_exceptions = []
 
     for element in elements:
-        if isinstance(element, BaseException):
+        if isinstance(element, Exception):
             exceptions_.append(element)
         else:
             no_exceptions.append(element)
