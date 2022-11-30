@@ -323,7 +323,7 @@ class MongoBase(DictBase, BytesBase):
 
         value = super().__getattribute__(attribute_name)
 
-        if not super().__getattribute__('database'):
+        if super().__getattribute__('database') is None:
             return value
 
         try:
@@ -348,18 +348,19 @@ class MongoBase(DictBase, BytesBase):
         else:
             return hash(self._id)
 
-    def _create_unique_indices(self):
+    @classmethod
+    def _create_unique_indices(cls):
         """Create the unique indices in the database based on unique_keys and nullable_unique_keys attributes."""
 
-        if not self.collection or not self.unique_keys:
+        if cls.collection is None or not cls.unique_keys:
             return
 
-        unique_keys = [(unique_key, pymongo.ASCENDING) for unique_key in self.unique_keys]
+        unique_keys = [(unique_key, pymongo.ASCENDING) for unique_key in cls.unique_keys]
         type_filter = {'$type': ['number', 'string', 'object', 'array', 'binData', 'objectId', 'bool', 'date', 'regex',
                                  'javascript', 'regex', 'timestamp', 'minKey', 'maxKey']}
-        partial_unique_filter = {nullable_unique_key: type_filter for nullable_unique_key in self.nullable_unique_keys}
+        partial_unique_filter = {nullable_unique_key: type_filter for nullable_unique_key in cls.nullable_unique_keys}
 
-        self.collection.create_index(unique_keys, partialFilterExpression=partial_unique_filter, unique=True)
+        cls.collection.create_index(unique_keys, partialFilterExpression=partial_unique_filter, unique=True)
 
     def _json_repr(self) -> Any:
         self_vars = vars(self).copy()
