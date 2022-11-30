@@ -5,12 +5,12 @@ import pymongo
 from flanautils.models import MongoBase
 
 mongo_client = None
-db = None
+database = None
 
 
-def init_db():
+def init_database():
     global mongo_client
-    global db
+    global database
 
     mongo_client = pymongo.MongoClient(
         host=os.environ.get('MONGO_HOST'),
@@ -20,5 +20,6 @@ def init_db():
         tz_aware=True
     )
 
-    db = mongo_client[os.environ['DATABASE_NAME']]
-    MongoBase.init_database_attributes(db)
+    if database_name := os.environ.get('DATABASE_NAME'):
+        database = mongo_client[database_name]
+        MongoBase.init_database_attributes(database)

@@ -323,6 +323,9 @@ class MongoBase(DictBase, BytesBase):
 
         value = super().__getattribute__(attribute_name)
 
+        if not super().__getattribute__('database'):
+            return value
+
         try:
             type_ = typing.get_type_hints(super().__getattribute__('__class__'))[attribute_name]
         except KeyError:
@@ -348,7 +351,7 @@ class MongoBase(DictBase, BytesBase):
     def _create_unique_indices(self):
         """Create the unique indices in the database based on unique_keys and nullable_unique_keys attributes."""
 
-        if not self.unique_keys:
+        if not self.collection or not self.unique_keys:
             return
 
         unique_keys = [(unique_key, pymongo.ASCENDING) for unique_key in self.unique_keys]
@@ -376,11 +379,21 @@ class MongoBase(DictBase, BytesBase):
         If cascade=True all referenced objects whose classes inherit from MongoBase are also deleted.
         """
 
+        if self.collection is None:
+            return
+
         if cascade:
             for referenced_object in self.get_referenced_objects():
                 referenced_object.delete(cascade)
 
         self.collection.delete_one({'_id': self._id})
+
+    @classmethod
+    def delete_many_raw(cls, *args, **kwargs):
+        if cls.collection is None:
+            return
+
+        cls.collection.delete_many(*args, **kwargs)
 
     @classmethod
     def find(
@@ -396,6 +409,9 @@ class MongoBase(DictBase, BytesBase):
         def find_generator() -> Iterator:
             for document in cursor:
                 yield cls.from_dict(document)
+
+        if cls.collection is None:
+            return iter([]) if lazy else []
 
         match sort_keys:
             case str():
@@ -419,17 +435,34 @@ class MongoBase(DictBase, BytesBase):
         else:
             return [cls.from_dict(document) for document in cursor]
 
+    def find_in_database_by_id(self, object_id: ObjectId) -> dict | None:
+        """Find an object in all database collections by its ObjectId."""
+
+        if self.database is None:
+            return
+
+        collections = (self.database[name] for name in self.database.list_collection_names())
+        return next((document for collection in collections if (document := collection.find_one({'_id': object_id}))), None)
+
     @classmethod
     def find_one(cls, query: dict = None, sort_keys: str | Iterable[str | tuple[str, int]] = ()) -> MongoBase | None:
         """Query the collection and return the first match."""
 
         return next(cls.find(query, sort_keys, lazy=True), None)
 
-    def find_in_database_by_id(self, object_id: ObjectId) -> dict | None:
-        """Find an object in all database collections by its ObjectId."""
+    @classmethod
+    def find_one_raw(cls, *args, **kwargs):
+        if cls.collection is None:
+            return
 
-        collections = (self.database[name] for name in self.database.list_collection_names())
-        return next((document for collection in collections if (document := collection.find_one({'_id': object_id}))), None)
+        return cls.collection.find_one(*args, **kwargs)
+
+    @classmethod
+    def find_raw(cls, *args, **kwargs):
+        if cls.collection is None:
+            return
+
+        return cls.collection.find(*args, **kwargs)
 
     @classmethod
     def from_bytes(cls, bytes_: bytes) -> Any:
@@ -453,13 +486,13 @@ class MongoBase(DictBase, BytesBase):
         return referenced_objects
 
     @classmethod
-    def init_database_attributes(cls, db: pymongo.database.Database):
+    def init_database_attributes(cls, database: pymongo.database.Database):
         """Initializes the attributes needed to connect the object to the database."""
 
         for subclass in MongoBase.subclasses:
             if subclass.collection_name is not None:
-                subclass.database = db
-                subclass.collection = db[subclass.collection_name]
+                subclass.database = database
+                subclass.collection = database[subclass.collection_name]
             if isinstance(subclass.unique_keys, str):
                 subclass.unique_keys = (subclass.unique_keys,)
             if isinstance(subclass.nullable_unique_keys, str):
@@ -478,6 +511,9 @@ class MongoBase(DictBase, BytesBase):
 
         Ignore the attributes specified in exclude.
         """
+
+        if self.collection is None:
+            return
 
         unique_attributes = self.unique_attributes
 
