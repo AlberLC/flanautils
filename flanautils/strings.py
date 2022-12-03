@@ -323,7 +323,7 @@ def str_to_class(class_names: str | Type | Iterable[str | Type], globals_: dict)
         return tuple(globals_[class_name] for class_name in class_names)
 
 
-def text_to_number(text: str, ignore_no_numbers=True, language='es') -> int:
+def text_to_number(text: str, ignore_no_numbers=True, language='es') -> int | float:
     """
     Convert numbers from text to numeric and return the sum of them.
 
