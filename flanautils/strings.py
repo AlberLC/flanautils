@@ -11,10 +11,9 @@ import jellyfish
 import unicodedata
 
 from flanautils import constants, iterables
-from flanautils.models.score_match import ScoreMatch
 
 
-def cartesian_product_string_matching(a_text: str | Iterable[str], b_text: str | Iterable[str], min_score: float = 0) -> dict[dict[str, float]]:
+def cartesian_product_string_matching(a_text: str | Iterable[str], b_text: str | Iterable[str], min_score: float = 0) -> dict[str, dict[str, float]]:
     """
     Compare between all the strings of the first iterable with all of the second (cartesian product) and returns a
     dictionary with the scores.
@@ -120,17 +119,17 @@ def join_last_separator(elements: Iterable, separator: str, last_separator: str,
     return f'{separator.join(elements[:-1])}{last_separator}{elements[-1]}{final_char}'
 
 
-def numbers_to_words(number: int, language='es') -> str:
+def numbers_to_text(number: int, language='es') -> str:
     """
     Convert an integer into its textual representation.
 
-    >>> numbers_to_words(7)
+    >>> numbers_to_text(7)
     'siete'
-    >>> numbers_to_words(92)
+    >>> numbers_to_text(92)
     'noventa y dos'
-    >>> numbers_to_words(15)
+    >>> numbers_to_text(15)
     'quince'
-    >>> numbers_to_words(16)
+    >>> numbers_to_text(16)
     'dieciséis'
     """
 
@@ -324,62 +323,62 @@ def str_to_class(class_names: str | Type | Iterable[str | Type], globals_: dict)
         return tuple(globals_[class_name] for class_name in class_names)
 
 
-def sum_numbers_in_text(text: str | Iterable[str], language='es') -> int:
-    """
-    Add all the existing numbers in a text, whether they are in numerical or textual form.
-
-    >>> sum_numbers_in_text('Uno más dos. Y luego cuarenta y cuatro y cuarenta y 2 y 10 y 1 más 7.')
-    107
-    >>> sum_numbers_in_text('0.1 + uno más dos, 5.2 -1.1 mas 5.3 -5.8 ')
-    6.7
-    """
-
-    if isinstance(text, str):
-        words = text.split()
-    else:
-        words = text
-
-    strip_characters = ''.join((*{*constants.SYMBOLS} - {'-'}, 'ç'))
-    n = 0
-    for word in words:
-        try:
-            n += cast_number(word.strip(strip_characters))
-        except ValueError:
-            n += words_to_numbers(word, language=language)
-
-    return n
-
-
-def words_to_numbers(text: str, ignore_no_numbers=True, language='es') -> int:
+def text_to_number(text: str, ignore_no_numbers=True, language='es') -> int:
     """
     Convert numbers from text to numeric and return the sum of them.
 
-    >>> words_to_numbers('Borra veintidos mensajes. Y... luego borra otros treinta y cinco.')
+    >>> text_to_number('cientocincuentaydos')
+    152
+    >>> text_to_number('Borra veintidos mensajes. Y... luego borra otros treinta y cinco.')
     57
+    >>> text_to_number('uno menos dos menos tres')
+    -4
+    >>> text_to_number('uno - dos y tres')
+    -4
+    >>> text_to_number('uno menos dos mas tres')
+    2
+    >>> text_to_number('uno - dos mas tres')
+    2
+    >>> text_to_number('uno - dos + tres')
+    2
+    >>> text_to_number('Uno más dos. Y luego cuarenta y cuatro y cuarenta y 2 y 10 y 1 más 7.')
+    107
+    >>> text_to_number('0.1 + uno más dos, 5.2 -1.1 mas 5.3 -5.8 ')
+    6.7
     """
 
     text = remove_accents(text)
+    text = remove_symbols(text, ('+', '-', '.'))
 
     if language == 'es':
         number_words_es = constants.NUMBER_WORDS[language]
+        text = replace(text, {'y': ' ', 'ç': None})
         text = re.sub(r'(([ei]nt[aeio])|(ec))', r'\1 ', text)
-        text = replace(text, {symbol: None for symbol in constants.SYMBOLS} | {'y': ' '})
         words = text.lower().split()
         n = 0
-        sign_ = 1
+        sign = 1
         for word in words:
-            if jellyfish.jaro_winkler_similarity(word, number_words_es['-']) >= constants.NUMBERS_SCORE_MATCHING:
-                sign_ = -1
+            word = word.strip('.')
+            try:
+                n += sign * cast_number(word)
+            except ValueError:
+                pass
+            else:
                 continue
 
-            word_possible_matches = []
-            for number_word in number_words_es.values():
-                score = jellyfish.jaro_winkler_similarity(word, number_word)
-                if score >= constants.NUMBERS_SCORE_MATCHING:
-                    word_possible_matches.append(ScoreMatch(number_words_es[number_word], score))
+            if len(word) > constants.TEXT_TO_NUMBER_MAX_WORD_LENGTH:
+                continue
 
-            if word_possible_matches:
-                n += sign_ * max(word_possible_matches, key=lambda match: match.score).element
+            if word == '+' or jellyfish.jaro_winkler_similarity(word, number_words_es['+']) >= constants.NUMBERS_SCORE_MATCHING:
+                sign = 1
+                continue
+            elif word == '-' or jellyfish.jaro_winkler_similarity(word, number_words_es['-']) >= constants.NUMBERS_SCORE_MATCHING:
+                sign = -1
+                continue
+
+            if word_matches := cartesian_product_string_matching(word, number_words_es.values(), constants.NUMBERS_SCORE_MATCHING):
+                number_word = max(word_matches[word].items(), key=lambda item: item[1])[0]
+                n += sign * number_words_es[number_word]
             elif not ignore_no_numbers:
                 raise KeyError(word)
 
@@ -388,11 +387,11 @@ def words_to_numbers(text: str, ignore_no_numbers=True, language='es') -> int:
     raise NotImplementedError('not implemented for that language')
 
 
-def words_to_time(text: str | Iterable[str], language='es') -> datetime.timedelta:
+def text_to_time(text: str | Iterable[str], language='es') -> datetime.timedelta:
     """
     Convert time in textual representation into a datetime.timedelta.
 
-    >>> words_to_time('Un minuto y 10 segundos.')
+    >>> text_to_time('Un minuto y 10 segundos.')
     datetime.timedelta(seconds=70)
     """
 
@@ -428,7 +427,7 @@ def words_to_time(text: str | Iterable[str], language='es') -> datetime.timedelt
                 delta_time += datetime.timedelta(weeks=n * constants.WEEKS_IN_A_YEAR)
                 n = 0
             else:
-                n += sum_numbers_in_text(word)
+                n += text_to_number(word)
 
         return delta_time
 

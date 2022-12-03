@@ -7,6 +7,7 @@ from flanautils.data_structures.ordered_set import OrderedSet
 
 NUMBER_WORDS = {
     'es': BiDict({
+        '+': 'mas',
         '-': 'menos',
         0: 'cero', 1: 'uno', 2: 'dos', 3: 'tres', 4: 'cuatro', 5: 'cinco', 6: 'seis', 7: 'siete', 8: 'ocho', 9: 'nueve',
         10: 'diez', 11: 'once', 12: 'doce', 13: 'trece', 14: 'catorce', 15: 'quince', 16: 'dieciséis',
@@ -17,6 +18,7 @@ NUMBER_WORDS = {
 NUMBERS_SCORE_MATCHING = 0.9
 SYMBOLS = ('!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@',
            '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~', '¡', '¨', 'ª', '¬', '´', '·', 'º', '¿', '€')
+TEXT_TO_NUMBER_MAX_WORD_LENGTH = 25
 TIME_UNITS_SCORE_MATCHING = 0.9
 WEEKS_IN_A_MONTH = 4.34524
 WEEKS_IN_A_YEAR = WEEKS_IN_A_MONTH * 12
