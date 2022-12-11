@@ -8,9 +8,12 @@ mongo_client = None
 database = None
 
 
-def init_database():
+def init_database(reload=False):
     global mongo_client
     global database
+
+    if mongo_client and not reload:
+        return
 
     mongo_client = pymongo.MongoClient(
         host=os.environ.get('MONGO_HOST'),
