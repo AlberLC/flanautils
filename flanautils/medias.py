@@ -1,24 +1,26 @@
 import asyncio
-import pathlib
 import platform
 import subprocess
-import uuid
-from collections import defaultdict
 
 import flanautils
 
 
 async def edit_metadata(bytes_: bytes, metadata: dict, overwrite=True) -> bytes:
-    if (await get_metadata(bytes_))['title'] and not overwrite:
-        return bytes_
+    if not overwrite:
+        old_metadata = await get_metadata(bytes_)
+        metadata = {k: v for k, v in metadata.items() if k not in old_metadata}
 
     metadata_args = []
     for k, v in metadata.items():
         metadata_args.append('-metadata')
         metadata_args.append(f'{k}={v}')
 
+    format_ = await get_format(bytes_)
+    if 'mp4' in format_:
+        format_ = 'mp4'
+
     process = await asyncio.create_subprocess_exec(
-        'ffmpeg', '-i', 'pipe:', '-c', 'copy', *metadata_args, '-f', await get_format(bytes_), 'pipe:',
+        'ffmpeg', '-i', 'pipe:', '-c', 'copy', *metadata_args, '-f', format_, 'pipe:',
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE
@@ -40,23 +42,27 @@ async def get_format(bytes_: bytes) -> str:
     )
     stdout, _stderr = await process.communicate(bytes_)
 
-    format_ = flanautils.find_environment_variables(stdout.decode())['format_name']
-    return 'mp4' if 'mp4' in format_ else format_
+    if not stdout:
+        raise ValueError('empty ffmpeg stdout')
+
+    return flanautils.find_environment_variables(stdout.decode())['format_name']
 
 
-async def get_metadata(bytes_: bytes) -> defaultdict:
-    metadata_file_name = f'{str(uuid.uuid1())}.txt'
+async def get_metadata(bytes_: bytes) -> dict:
     process = await asyncio.create_subprocess_exec(
-        'ffmpeg', '-i', 'pipe:', '-f', 'ffmetadata', metadata_file_name,
+        'ffmpeg', '-i', 'pipe:', '-f', 'ffmetadata', 'pipe:',
         stdin=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.DEVNULL
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
     )
-    await process.communicate(bytes_)
+    stdout, _stderr = await process.communicate(bytes_)
 
-    metadata = flanautils.find_environment_variables(metadata_file_name)
-    pathlib.Path(metadata_file_name).unlink(missing_ok=True)
+    if not stdout:
+        raise ValueError('empty ffmpeg stdout')
 
-    return defaultdict(lambda: None, {k.lower(): v for k, v in metadata.items()})
+    metadata = flanautils.find_environment_variables(stdout.decode())
+
+    return {k.lower(): v for k, v in metadata.items()}
 
 
 async def to_gif(bytes_: bytes) -> bytes:
