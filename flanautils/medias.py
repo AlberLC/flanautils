@@ -1,11 +1,12 @@
 import asyncio
-import platform
-import subprocess
+import pathlib
 
 import flanautils
 
 
 async def edit_metadata(bytes_: bytes, metadata: dict, overwrite=True) -> bytes:
+    """Edits the metadata of media file bytes."""
+
     if not overwrite:
         old_metadata = await get_metadata(bytes_)
         metadata = {k: v for k, v in metadata.items() if k not in old_metadata}
@@ -34,6 +35,8 @@ async def edit_metadata(bytes_: bytes, metadata: dict, overwrite=True) -> bytes:
 
 
 async def get_format(bytes_: bytes) -> str:
+    """Gets the format of media file bytes."""
+
     process = await asyncio.create_subprocess_exec(
         'ffprobe', '-show_format', 'pipe:',
         stdin=asyncio.subprocess.PIPE,
@@ -49,6 +52,8 @@ async def get_format(bytes_: bytes) -> str:
 
 
 async def get_metadata(bytes_: bytes) -> dict:
+    """Gets the metadata dictionary of the media file bytes."""
+
     process = await asyncio.create_subprocess_exec(
         'ffmpeg', '-i', 'pipe:', '-f', 'ffmetadata', 'pipe:',
         stdin=asyncio.subprocess.PIPE,
@@ -66,15 +71,13 @@ async def get_metadata(bytes_: bytes) -> dict:
 
 
 async def to_gif(bytes_: bytes) -> bytes:
-    """Convert video given in bytes into video in gif format using FFmpeg."""
+    """Convert video given in bytes into video in gif format."""
 
-    kwargs = {'creationflags': subprocess.CREATE_NO_WINDOW} if platform.system() == 'Windows' else {}
     process = await asyncio.create_subprocess_shell(
         'ffmpeg -i pipe: -f gif -vf "fps=30,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 pipe:',
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        **kwargs
+        stderr=asyncio.subprocess.PIPE
     )
     stdout, _stderr = await process.communicate(bytes_)
 
@@ -85,6 +88,8 @@ async def to_gif(bytes_: bytes) -> bytes:
 
 
 async def to_mp3(bytes_: bytes, bitrate=192, sample_rate=44100, channels=2) -> bytes:
+    """Extract and return audio in mp3 format from the media file bytes."""
+
     process = await asyncio.create_subprocess_exec(
         'ffmpeg', '-i', 'pipe:', '-b:a', f'{bitrate}k', '-ar', str(sample_rate), '-ac', str(channels), '-f', 'mp3', 'pipe:',
         stdin=asyncio.subprocess.PIPE,
