@@ -54,7 +54,7 @@ class Media(FlanaBase):
         self.bytes_ = kwargs.get('bytes_') or self.bytes_
         self.type_ = kwargs.get('type_') or self.type_
         self.extension = kwargs.get('extension') or self.extension
-        if not self.extension:
+        if not self.extension and self.type_:
             self.extension = self.type_.default_extension
         self.source = kwargs.get('source') or self.source
         self.title = kwargs.get('title') or self.title
