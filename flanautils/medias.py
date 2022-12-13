@@ -1,5 +1,6 @@
 import asyncio
 import pathlib
+import uuid
 
 import flanautils
 
@@ -70,24 +71,60 @@ async def get_metadata(bytes_: bytes) -> dict:
     return {k.lower(): v for k, v in metadata.items()}
 
 
+# noinspection PyUnboundLocalVariable
 async def merge(
-    input_file_1: str | pathlib.Path,
-    input_file_2: str | pathlib.Path = None,
-    output_file: str | pathlib.Path = 'output.mp4'
-):
-    """Merges the input files into one file."""
+    input_file_1: bytes | str | pathlib.Path,
+    input_file_2: bytes | str | pathlib.Path = None,
+    output_file: str | pathlib.Path = None,
+    default_format='mp4'
+) -> bytes | None:
+    """
+    Merges the input files into one.
+
+    If output_file is not provided returns a default_format file bytes.
+    """
+
+    if isinstance(input_file_1, bytes):
+        input_file_name_1 = str(uuid.uuid1())
+        input_file_path_1 = pathlib.Path(input_file_name_1)
+        input_file_path_1.write_bytes(input_file_1)
+    else:
+        input_file_name_1 = str(input_file_1)
 
     if input_file_2:
-        input_2_args = ('-i', str(input_file_2))
+        if isinstance(input_file_2, bytes):
+            input_file_name_2 = str(uuid.uuid1())
+            input_file_path_2 = pathlib.Path(input_file_name_2)
+            input_file_path_2.write_bytes(input_file_2)
+        else:
+            input_file_name_2 = str(input_file_2)
+        input_2_args = ('-i', input_file_name_2)
     else:
         input_2_args = ()
 
+    if output_file:
+        output_file_name = str(output_file)
+    else:
+        output_file_name = f'{str(uuid.uuid1())}.{default_format}'
+        output_file_path = pathlib.Path(output_file_name)
+        output_file_path.touch()
+
     process = await asyncio.create_subprocess_exec(
-        'ffmpeg', '-i', str(input_file_1), *input_2_args, '-y', '-c', 'copy', str(output_file),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
+        'ffmpeg', '-i', input_file_name_1, *input_2_args, '-y', '-c', 'copy', output_file_name,
+        stdin=asyncio.subprocess.DEVNULL,
+        stdout=asyncio.subprocess.DEVNULL,
+        stderr=asyncio.subprocess.DEVNULL
     )
     await process.wait()
+
+    if isinstance(input_file_1, bytes):
+        input_file_path_1.unlink(missing_ok=True)
+    if isinstance(input_file_2, bytes):
+        input_file_path_2.unlink(missing_ok=True)
+    if not output_file:
+        bytes_ = output_file_path.read_bytes()
+        output_file_path.unlink(missing_ok=True)
+        return bytes_
 
 
 async def to_gif(bytes_: bytes) -> bytes:
