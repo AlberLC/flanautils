@@ -106,8 +106,6 @@ async def merge(
         output_file_name = str(output_file)
     else:
         output_file_name = f'{str(uuid.uuid1())}.{default_format}'
-        output_file_path = pathlib.Path(output_file_name)
-        output_file_path.touch()
 
     process = await asyncio.create_subprocess_exec(
         'ffmpeg', '-i', input_file_name_1, *input_2_args, '-y', '-c', 'copy', output_file_name,
@@ -122,6 +120,7 @@ async def merge(
     if isinstance(input_file_2, bytes):
         input_file_path_2.unlink(missing_ok=True)
     if not output_file:
+        output_file_path = pathlib.Path(output_file_name)
         bytes_ = output_file_path.read_bytes()
         output_file_path.unlink(missing_ok=True)
         return bytes_
