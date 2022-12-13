@@ -70,6 +70,26 @@ async def get_metadata(bytes_: bytes) -> dict:
     return {k.lower(): v for k, v in metadata.items()}
 
 
+async def merge(
+    input_file_1: str | pathlib.Path,
+    input_file_2: str | pathlib.Path = None,
+    output_file: str | pathlib.Path = 'output.mp4'
+):
+    """Merges the input files into one file."""
+
+    if input_file_2:
+        input_2_args = ('-i', str(input_file_2))
+    else:
+        input_2_args = ()
+
+    process = await asyncio.create_subprocess_exec(
+        'ffmpeg', '-i', str(input_file_1), *input_2_args, '-y', '-c', 'copy', str(output_file),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    await process.wait()
+
+
 async def to_gif(bytes_: bytes) -> bytes:
     """Convert video given in bytes into video in gif format."""
 
