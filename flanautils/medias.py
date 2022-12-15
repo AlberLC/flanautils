@@ -8,6 +8,14 @@ import flanautils
 async def edit_metadata(input_file: bytes | str | pathlib.Path, metadata: dict, overwrite=True) -> bytes:
     """Edits the media file metadata."""
 
+    if isinstance(input_file, bytes):
+        input_file_name = str(uuid.uuid1())
+        input_file_path = pathlib.Path(input_file_name)
+        input_file_path.write_bytes(input_file)
+    else:
+        input_file_name = str(input_file)
+        input_file_path = pathlib.Path(input_file)
+
     if not overwrite:
         old_metadata = await get_metadata(input_file)
         metadata = {k: v for k, v in metadata.items() if k not in old_metadata}
@@ -15,25 +23,19 @@ async def edit_metadata(input_file: bytes | str | pathlib.Path, metadata: dict, 
         if isinstance(input_file, bytes):
             return input_file
         else:
-            return pathlib.Path(input_file).read_bytes()
+            return input_file_path.read_bytes()
 
     metadata_args = []
     for k, v in metadata.items():
         metadata_args.append('-metadata')
         metadata_args.append(f'{k}={v}')
 
-    format_ = await get_format(input_file)
-    if 'mp4' in format_:
-        format_ = 'mp4'
+    if not (extension := input_file_path.suffix):
+        extension = await get_format(input_file)
+        if 'mp4' in extension:
+            extension = 'mp4'
 
-    if isinstance(input_file, bytes):
-        input_file_name = str(uuid.uuid1())
-        input_file_path = pathlib.Path(input_file_name)
-        input_file_path.write_bytes(input_file)
-    else:
-        input_file_name = str(input_file)
-
-    output_file_name = f'{str(uuid.uuid1())}.{format_}'
+    output_file_name = f'{str(uuid.uuid1())}.{extension}'
 
     process = await asyncio.create_subprocess_exec(
         'ffmpeg', '-i', input_file_name, '-c', 'copy', *metadata_args, output_file_name,
@@ -54,17 +56,22 @@ async def get_format(input_file: bytes | str | pathlib.Path) -> str:
     """Gets media file format."""
 
     if isinstance(input_file, bytes):
-        bytes_ = input_file
+        input_file_name = str(uuid.uuid1())
+        input_file_path = pathlib.Path(input_file_name)
+        input_file_path.write_bytes(input_file)
     else:
-        bytes_ = pathlib.Path(input_file).read_bytes()
+        input_file_name = str(input_file)
+        input_file_path = pathlib.Path(input_file)
 
     process = await asyncio.create_subprocess_exec(
-        'ffprobe', '-show_format', 'pipe:',
-        stdin=asyncio.subprocess.PIPE,
+        'ffprobe', '-show_format', input_file_name,
+        stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE
     )
-    stdout, _stderr = await process.communicate(bytes_)
+    stdout, _stderr = await process.communicate()
+
+    input_file_path.unlink(missing_ok=True)
 
     if not stdout:
         raise ValueError('empty ffmpeg stdout')
@@ -76,17 +83,22 @@ async def get_metadata(input_file: bytes | str | pathlib.Path) -> dict:
     """Gets the metadata dictionary of the media file."""
 
     if isinstance(input_file, bytes):
-        bytes_ = input_file
+        input_file_name = str(uuid.uuid1())
+        input_file_path = pathlib.Path(input_file_name)
+        input_file_path.write_bytes(input_file)
     else:
-        bytes_ = pathlib.Path(input_file).read_bytes()
+        input_file_name = str(input_file)
+        input_file_path = pathlib.Path(input_file)
 
     process = await asyncio.create_subprocess_exec(
-        'ffmpeg', '-i', 'pipe:', '-f', 'ffmetadata', 'pipe:',
-        stdin=asyncio.subprocess.PIPE,
+        'ffmpeg', '-i', input_file_name, '-f', 'ffmetadata', 'pipe:',
+        stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE
     )
-    stdout, _stderr = await process.communicate(bytes_)
+    stdout, _stderr = await process.communicate()
+
+    input_file_path.unlink(missing_ok=True)
 
     if not stdout:
         raise ValueError('empty ffmpeg stdout')
