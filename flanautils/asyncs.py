@@ -151,14 +151,6 @@ get_request = functools.partial(request, HTTPMethod.GET)
 post_request = functools.partial(request, HTTPMethod.POST)
 
 
-async def wait_for_process(process_: multiprocessing.Process, timeout: int | float):
-    try:
-        await asyncio.wait_for(poll_process(process_), timeout)
-    except asyncio.TimeoutError:
-        process_.terminate()
-        raise
-
-
 async def run_process_async(func: Callable, *args, timeout: int | float = None) -> Any:
     queue_ = multiprocessing.Queue()
     await wait_for_process(
@@ -169,3 +161,11 @@ async def run_process_async(func: Callable, *args, timeout: int | float = None) 
         return queue_.get(block=False)
     except queue.Empty:
         pass
+
+
+async def wait_for_process(process_: multiprocessing.Process, timeout: int | float):
+    try:
+        await asyncio.wait_for(poll_process(process_), timeout)
+    except asyncio.TimeoutError:
+        process_.terminate()
+        raise
