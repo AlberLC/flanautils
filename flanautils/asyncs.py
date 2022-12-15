@@ -154,7 +154,7 @@ post_request = functools.partial(request, HTTPMethod.POST)
 async def run_process_async(func: Callable, *args, timeout: int | float = None) -> Any:
     queue_ = multiprocessing.Queue()
     await wait_for_process(
-        multiprocessing.Process(target=process_function, args=(func, *args), kwargs={'queue_': queue_}),
+        multiprocessing.Process(target=_process_function, args=(func, *args), kwargs={'queue_': queue_}),
         timeout
     )
     try:
