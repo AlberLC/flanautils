@@ -11,6 +11,8 @@ async def edit_metadata(bytes_: bytes, metadata: dict, overwrite=True) -> bytes:
     if not overwrite:
         old_metadata = await get_metadata(bytes_)
         metadata = {k: v for k, v in metadata.items() if k not in old_metadata}
+    if not metadata:
+        return bytes_
 
     metadata_args = []
     for k, v in metadata.items():
