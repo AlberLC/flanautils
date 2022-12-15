@@ -17,7 +17,10 @@ from flanautils.models.enums import HTTPMethod
 
 
 def _process_function(func: Callable, *args, queue_: multiprocessing.Queue):
-    queue_.put(func(*args))
+    if asyncio.iscoroutinefunction(func):
+        queue_.put(asyncio.run(func(*args)))
+    else:
+        queue_.put(func(*args))
 
 
 async def do_every(
