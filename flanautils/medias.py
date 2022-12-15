@@ -6,7 +6,7 @@ import flanautils
 
 
 async def edit_metadata(input_file: bytes | str | pathlib.Path, metadata: dict, overwrite=True) -> bytes:
-    """Edits the metadata of media file bytes."""
+    """Edits the media file metadata."""
 
     if not overwrite:
         old_metadata = await get_metadata(input_file)
