@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import functools
 import html
+import multiprocessing
 from asyncio import Task
 from typing import Any, Callable, Iterable, Type
 
@@ -136,3 +137,17 @@ async def request(http_method: HTTPMethod, url: str, params: dict = None, header
 
 get_request = functools.partial(request, HTTPMethod.GET)
 post_request = functools.partial(request, HTTPMethod.POST)
+
+
+async def run_process(process_: multiprocessing.Process):
+    process_.start()
+    while process_.is_alive():
+        await asyncio.sleep(1)
+
+
+async def wait_for_process(process_: multiprocessing.Process, timeout: int | float):
+    try:
+        await asyncio.wait_for(run_process(process_), timeout)
+    except asyncio.TimeoutError:
+        process_.terminate()
+        raise
