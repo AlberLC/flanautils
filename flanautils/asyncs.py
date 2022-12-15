@@ -3,8 +3,10 @@ import datetime
 import functools
 import html
 import multiprocessing
+import queue
 from asyncio import Task
-from typing import Any, Callable, Iterable, Type
+from collections.abc import Callable, Iterable
+from typing import Any, Type
 
 import aiohttp
 import aiohttp.client_exceptions
@@ -12,6 +14,10 @@ import yarl
 
 from flanautils.exceptions import ResponseError
 from flanautils.models.enums import HTTPMethod
+
+
+def process_function(func: Callable, *args, queue_: multiprocessing.Queue):
+    queue_.put(func(*args))
 
 
 async def do_every(
@@ -151,3 +157,15 @@ async def wait_for_process(process_: multiprocessing.Process, timeout: int | flo
     except asyncio.TimeoutError:
         process_.terminate()
         raise
+
+
+async def run_process_async(func: Callable, *args, timeout: int | float = None) -> Any:
+    queue_ = multiprocessing.Queue()
+    await wait_for_process(
+        multiprocessing.Process(target=process_function, args=(func, *args), kwargs={'queue_': queue_}),
+        timeout
+    )
+    try:
+        return queue_.get(block=False)
+    except queue.Empty:
+        pass
