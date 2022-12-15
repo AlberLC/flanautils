@@ -47,6 +47,7 @@ async def edit_metadata(input_file: bytes | str | pathlib.Path, metadata: dict, 
 
     if isinstance(input_file, bytes):
         input_file_path.unlink(missing_ok=True)
+
     output_file_path = pathlib.Path(output_file_name)
     bytes_ = output_file_path.read_bytes()
     output_file_path.unlink(missing_ok=True)
@@ -73,6 +74,7 @@ async def get_format(input_file: bytes | str | pathlib.Path) -> str:
     stdout, _stderr = await process.communicate()
 
     if isinstance(input_file, bytes):
+        # noinspection PyUnboundLocalVariable
         input_file_path.unlink(missing_ok=True)
 
     if not stdout:
@@ -100,6 +102,7 @@ async def get_metadata(input_file: bytes | str | pathlib.Path) -> dict:
     stdout, _stderr = await process.communicate()
 
     if isinstance(input_file, bytes):
+        # noinspection PyUnboundLocalVariable
         input_file_path.unlink(missing_ok=True)
 
     if not stdout:
