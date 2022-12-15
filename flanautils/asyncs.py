@@ -16,7 +16,7 @@ from flanautils.exceptions import ResponseError
 from flanautils.models.enums import HTTPMethod
 
 
-def process_function(func: Callable, *args, queue_: multiprocessing.Queue):
+def _process_function(func: Callable, *args, queue_: multiprocessing.Queue):
     queue_.put(func(*args))
 
 
