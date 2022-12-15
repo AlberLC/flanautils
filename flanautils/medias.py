@@ -45,6 +45,8 @@ async def edit_metadata(input_file: bytes | str | pathlib.Path, metadata: dict, 
     )
     await process.wait()
 
+    if isinstance(input_file, bytes):
+        input_file_path.unlink(missing_ok=True)
     output_file_path = pathlib.Path(output_file_name)
     bytes_ = output_file_path.read_bytes()
     output_file_path.unlink(missing_ok=True)
@@ -61,7 +63,6 @@ async def get_format(input_file: bytes | str | pathlib.Path) -> str:
         input_file_path.write_bytes(input_file)
     else:
         input_file_name = str(input_file)
-        input_file_path = pathlib.Path(input_file)
 
     process = await asyncio.create_subprocess_exec(
         'ffprobe', '-show_format', input_file_name,
@@ -71,7 +72,8 @@ async def get_format(input_file: bytes | str | pathlib.Path) -> str:
     )
     stdout, _stderr = await process.communicate()
 
-    input_file_path.unlink(missing_ok=True)
+    if isinstance(input_file, bytes):
+        input_file_path.unlink(missing_ok=True)
 
     if not stdout:
         raise ValueError('empty ffmpeg stdout')
@@ -88,7 +90,6 @@ async def get_metadata(input_file: bytes | str | pathlib.Path) -> dict:
         input_file_path.write_bytes(input_file)
     else:
         input_file_name = str(input_file)
-        input_file_path = pathlib.Path(input_file)
 
     process = await asyncio.create_subprocess_exec(
         'ffmpeg', '-i', input_file_name, '-f', 'ffmetadata', 'pipe:',
@@ -98,7 +99,8 @@ async def get_metadata(input_file: bytes | str | pathlib.Path) -> dict:
     )
     stdout, _stderr = await process.communicate()
 
-    input_file_path.unlink(missing_ok=True)
+    if isinstance(input_file, bytes):
+        input_file_path.unlink(missing_ok=True)
 
     if not stdout:
         raise ValueError('empty ffmpeg stdout')
@@ -112,8 +114,7 @@ async def get_metadata(input_file: bytes | str | pathlib.Path) -> dict:
 async def merge(
     input_file_1: bytes | str | pathlib.Path,
     input_file_2: bytes | str | pathlib.Path = None,
-    output_file: str | pathlib.Path = None,
-    default_format='mp4'
+    format_='mp4'
 ) -> bytes | None:
     """
     Merges the input files into one.
@@ -139,10 +140,7 @@ async def merge(
     else:
         input_2_args = ()
 
-    if output_file:
-        output_file_name = str(output_file)
-    else:
-        output_file_name = f'{str(uuid.uuid1())}.{default_format}'
+    output_file_name = f'{str(uuid.uuid1())}.{format_}'
 
     process = await asyncio.create_subprocess_exec(
         'ffmpeg', '-i', input_file_name_1, *input_2_args, '-y', '-c', 'copy', output_file_name,
@@ -154,13 +152,15 @@ async def merge(
 
     if isinstance(input_file_1, bytes):
         input_file_path_1.unlink(missing_ok=True)
+
     if isinstance(input_file_2, bytes):
         input_file_path_2.unlink(missing_ok=True)
-    if not output_file:
-        output_file_path = pathlib.Path(output_file_name)
-        bytes_ = output_file_path.read_bytes()
-        output_file_path.unlink(missing_ok=True)
-        return bytes_
+
+    output_file_path = pathlib.Path(output_file_name)
+    bytes_ = output_file_path.read_bytes()
+    output_file_path.unlink(missing_ok=True)
+
+    return bytes_
 
 
 async def to_gif(input_file: bytes | str | pathlib.Path) -> bytes:
