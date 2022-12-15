@@ -88,6 +88,12 @@ async def do_later(
     return asyncio.create_task(do_later_())
 
 
+async def poll_process(process_: multiprocessing.Process):
+    process_.start()
+    while process_.is_alive():
+        await asyncio.sleep(1)
+
+
 async def request(http_method: HTTPMethod, url: str, params: dict = None, headers: dict = None, data: dict = None, session: aiohttp.ClientSession = None, return_response=False, intents=5) -> bytes | str | list | dict | aiohttp.ClientResponse:
     """
     Function that simplifies asynchronous http requests with aiohttp.
@@ -139,15 +145,9 @@ get_request = functools.partial(request, HTTPMethod.GET)
 post_request = functools.partial(request, HTTPMethod.POST)
 
 
-async def run_process(process_: multiprocessing.Process):
-    process_.start()
-    while process_.is_alive():
-        await asyncio.sleep(1)
-
-
 async def wait_for_process(process_: multiprocessing.Process, timeout: int | float):
     try:
-        await asyncio.wait_for(run_process(process_), timeout)
+        await asyncio.wait_for(poll_process(process_), timeout)
     except asyncio.TimeoutError:
         process_.terminate()
         raise
