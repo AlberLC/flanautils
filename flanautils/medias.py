@@ -146,7 +146,7 @@ async def merge(
     output_file_name = f'{str(uuid.uuid1())}.{format_}'
 
     process = await asyncio.create_subprocess_exec(
-        'ffmpeg', '-i', input_file_name_1, *input_2_args, '-y', '-c', 'copy', output_file_name,
+        'ffmpeg', '-i', input_file_name_1, *input_2_args, '-y', '-c', 'copy', '-f', 'gif', 'pipe:',
         stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.DEVNULL,
         stderr=asyncio.subprocess.DEVNULL
@@ -169,18 +169,32 @@ async def merge(
 async def to_gif(input_file: bytes | str | pathlib.Path) -> bytes:
     """Convert video to gif."""
 
-    if isinstance(input_file, bytes):
-        bytes_ = input_file
-    else:
-        bytes_ = pathlib.Path(input_file).read_bytes()
+    if await get_format(input_file) == 'gif':
+        if isinstance(input_file, bytes):
+            return input_file
+        else:
+            return pathlib.Path(input_file).read_bytes()
 
-    process = await asyncio.create_subprocess_shell(
-        'ffmpeg -i pipe: -f gif -vf "fps=30,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 pipe:',
-        stdin=asyncio.subprocess.PIPE,
+    if isinstance(input_file, bytes):
+        input_file_name = str(uuid.uuid1())
+        input_file_path = pathlib.Path(input_file_name)
+        input_file_path.write_bytes(input_file)
+    else:
+        input_file_name = str(input_file)
+
+    output_file_name = f'{str(uuid.uuid1())}.gif'
+
+    process = await asyncio.create_subprocess_exec(
+        'ffmpeg', '-i', input_file_name, '-vf', 'fps=30,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse', '-loop', '0', output_file_name,
+        stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE
     )
-    stdout, _stderr = await process.communicate(bytes_)
+    stdout, _stderr = await process.communicate()
+
+    if isinstance(input_file, bytes):
+        # noinspection PyUnboundLocalVariable
+        input_file_path.unlink(missing_ok=True)
 
     if not stdout:
         raise ValueError('empty ffmpeg stdout')
@@ -191,18 +205,30 @@ async def to_gif(input_file: bytes | str | pathlib.Path) -> bytes:
 async def to_mp3(input_file: bytes | str | pathlib.Path, bitrate=192, sample_rate=44100, channels=2) -> bytes:
     """Extract and return audio in mp3 format from the media file."""
 
+    if await get_format(input_file) == 'mp3':
+        if isinstance(input_file, bytes):
+            return input_file
+        else:
+            return pathlib.Path(input_file).read_bytes()
+
     if isinstance(input_file, bytes):
-        bytes_ = input_file
+        input_file_name = str(uuid.uuid1())
+        input_file_path = pathlib.Path(input_file_name)
+        input_file_path.write_bytes(input_file)
     else:
-        bytes_ = pathlib.Path(input_file).read_bytes()
+        input_file_name = str(input_file)
 
     process = await asyncio.create_subprocess_exec(
-        'ffmpeg', '-i', 'pipe:', '-b:a', f'{bitrate}k', '-ar', str(sample_rate), '-ac', str(channels), '-f', 'mp3', 'pipe:',
-        stdin=asyncio.subprocess.PIPE,
+        'ffmpeg', '-i', input_file_name, '-b:a', f'{bitrate}k', '-ar', str(sample_rate), '-ac', str(channels), '-f', 'mp3', 'pipe:',
+        stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE
     )
-    stdout, _stderr = await process.communicate(bytes_)
+    stdout, _stderr = await process.communicate()
+
+    if isinstance(input_file, bytes):
+        # noinspection PyUnboundLocalVariable
+        input_file_path.unlink(missing_ok=True)
 
     if not stdout:
         raise ValueError('empty ffmpeg stdout')
