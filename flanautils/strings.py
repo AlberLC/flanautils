@@ -100,6 +100,10 @@ def find_environment_variables(text: str | pathlib.Path) -> dict:
     return dict(line.split('=', maxsplit=1) for original_line in text.splitlines() if '=' in (line := original_line.strip()) and not line.startswith('#'))
 
 
+def find_urls(text: str) -> list[str]:
+    return re.findall('www\.[-a-zA-Z0-9()@:%_+.~#?&/=]+', text)
+
+
 def join_last_separator(elements: Iterable, separator: str, last_separator: str, final_char='') -> str:
     """
     Join all the elements in a string, using a separator for all of them except the last one, where it uses
