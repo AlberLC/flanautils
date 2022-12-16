@@ -17,26 +17,26 @@ class Media(FlanaBase):
     bytes_: bytes = None
     type_: MediaType = None
     extension: str = None
-    source: Source = None
+    source: str | Source = None
     title: str = None
     author: str = None
     album: str = None
     song_info: Media = None
 
     @overload
-    def __init__(self, url: str | pathlib.Path = None, type_: MediaType = None, extension: str = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
+    def __init__(self, url: str | pathlib.Path = None, type_: MediaType = None, extension: str = None, source: str | Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
         pass
 
     @overload
-    def __init__(self, bytes_: bytes = None, type_: MediaType = None, extension: str = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
+    def __init__(self, bytes_: bytes = None, type_: MediaType = None, extension: str = None, source: str | Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
         pass
 
     @overload
-    def __init__(self, url: str | pathlib.Path = None, bytes_: bytes = None, type_: MediaType = None, extension: str = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
+    def __init__(self, url: str | pathlib.Path = None, bytes_: bytes = None, type_: MediaType = None, extension: str = None, source: str | Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
         pass
 
     @overload
-    def __init__(self, bytes_: bytes = None, url: str | pathlib.Path = None, type_: MediaType = None, extension: str = None, source: Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
+    def __init__(self, bytes_: bytes = None, url: str | pathlib.Path = None, type_: MediaType = None, extension: str = None, source: str | Source = None, title: str = None, author: str = None, album: str = None, song_info: Media = None):
         pass
 
     def __init__(self, *args, **kwargs):
