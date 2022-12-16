@@ -146,7 +146,7 @@ async def merge(
     output_file_name = f'{str(uuid.uuid1())}.{format_}'
 
     process = await asyncio.create_subprocess_exec(
-        'ffmpeg', '-i', input_file_name_1, *input_2_args, '-y', '-c', 'copy', '-f', 'gif', 'pipe:',
+        'ffmpeg', '-i', input_file_name_1, *input_2_args, '-y', '-c', 'copy', output_file_name,
         stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.DEVNULL,
         stderr=asyncio.subprocess.DEVNULL
@@ -182,10 +182,8 @@ async def to_gif(input_file: bytes | str | pathlib.Path) -> bytes:
     else:
         input_file_name = str(input_file)
 
-    output_file_name = f'{str(uuid.uuid1())}.gif'
-
     process = await asyncio.create_subprocess_exec(
-        'ffmpeg', '-i', input_file_name, '-vf', 'fps=30,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse', '-loop', '0', output_file_name,
+        'ffmpeg', '-i', input_file_name, '-vf', 'fps=30,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse', '-loop', '0', '-f', 'gif', 'pipe:',
         stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE
