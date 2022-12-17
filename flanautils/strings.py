@@ -101,7 +101,7 @@ def find_environment_variables(text: str | pathlib.Path) -> dict:
 
 
 def find_urls(text: str) -> list[str]:
-    return re.findall('www\.[-a-zA-Z0-9()@:%_+.~#?&/=]+', text)
+    return re.findall('(?:http|www\.)[-a-zA-Z0-9()@:%_+.~#?&/=]+', text)
 
 
 def join_last_separator(elements: Iterable, separator: str, last_separator: str, final_char='') -> str:
