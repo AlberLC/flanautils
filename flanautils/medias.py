@@ -8,14 +8,6 @@ import flanautils
 async def edit_metadata(input_file: bytes | str | pathlib.Path, metadata: dict, overwrite=True) -> bytes:
     """Edits the media file metadata."""
 
-    if isinstance(input_file, bytes):
-        input_file_name = str(uuid.uuid1())
-        input_file_path = pathlib.Path(input_file_name)
-        input_file_path.write_bytes(input_file)
-    else:
-        input_file_name = str(input_file)
-        input_file_path = pathlib.Path(input_file)
-
     if not overwrite:
         old_metadata = await get_metadata(input_file)
         metadata = {k: v for k, v in metadata.items() if k not in old_metadata}
@@ -23,12 +15,20 @@ async def edit_metadata(input_file: bytes | str | pathlib.Path, metadata: dict, 
         if isinstance(input_file, bytes):
             return input_file
         else:
-            return input_file_path.read_bytes()
+            return pathlib.Path(input_file).read_bytes()
 
     metadata_args = []
     for k, v in metadata.items():
         metadata_args.append('-metadata')
         metadata_args.append(f'{k}={v}')
+
+    if isinstance(input_file, bytes):
+        input_file_name = str(uuid.uuid1())
+        input_file_path = pathlib.Path(input_file_name)
+        input_file_path.write_bytes(input_file)
+    else:
+        input_file_name = str(input_file)
+        input_file_path = pathlib.Path(input_file)
 
     if not (extension := input_file_path.suffix):
         extension = await get_format(input_file)
