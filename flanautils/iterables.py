@@ -65,16 +65,16 @@ def filter(elements: Iterable, target: Any = None, condition: Callable[..., bool
 def filter_exceptions(elements: Iterable) -> tuple[list, list[Exception]]:
     """Filters the exceptions of the iterable and returns a tuple with the separated results."""
 
-    exceptions_ = []
+    exceptions = []
     no_exceptions = []
 
     for element in elements:
         if isinstance(element, Exception):
-            exceptions_.append(element)
+            exceptions.append(element)
         else:
             no_exceptions.append(element)
 
-    return no_exceptions, exceptions_
+    return no_exceptions, exceptions
 
 
 # noinspection PyShadowingNames
