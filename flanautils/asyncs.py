@@ -16,11 +16,20 @@ from flanautils.exceptions import ResponseError
 from flanautils.models.enums import HTTPMethod
 
 
-def _process_function(func: Callable, *args, queue_: multiprocessing.Queue):
-    if asyncio.iscoroutinefunction(func):
-        queue_.put(asyncio.run(func(*args)))
-    else:
-        queue_.put(func(*args))
+def _process_function(
+    func: Callable,
+    *args,
+    result_queue__: multiprocessing.Queue,
+    error_queue__: multiprocessing.Queue,
+    **kwargs
+):
+    try:
+        if asyncio.iscoroutinefunction(func):
+            result_queue__.put(asyncio.run(func(*args, **kwargs)))
+        else:
+            result_queue__.put(func(*args, **kwargs))
+    except Exception as e:
+        error_queue__.put(e)
 
 
 async def do_every(
@@ -154,16 +163,21 @@ get_request = functools.partial(request, HTTPMethod.GET)
 post_request = functools.partial(request, HTTPMethod.POST)
 
 
-async def run_process_async(func: Callable, *args, timeout: int | float = None) -> Any:
-    queue_ = multiprocessing.Queue()
+async def run_process_async(func: Callable, *args, timeout: int | float = None, **kwargs) -> Any:
+    result_queue = multiprocessing.Queue()
+    error_queue = multiprocessing.Queue()
     await wait_for_process(
-        multiprocessing.Process(target=_process_function, args=(func, *args), kwargs={'queue_': queue_}),
+        multiprocessing.Process(
+            target=_process_function,
+            args=(func, *args),
+            kwargs={'result_queue__': result_queue, 'error_queue__': error_queue, **kwargs}
+        ),
         timeout
     )
     try:
-        return queue_.get(block=False)
+        raise error_queue.get(block=False)
     except queue.Empty:
-        pass
+        return result_queue.get(block=False)
 
 
 async def wait_for_process(process_: multiprocessing.Process, timeout: int | float):
