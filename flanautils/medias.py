@@ -30,7 +30,7 @@ async def edit_metadata(input_file: bytes | str | pathlib.Path, metadata: dict, 
         input_file_name = str(input_file)
         input_file_path = pathlib.Path(input_file)
 
-    if not (extension := input_file_path.suffix):
+    if not (extension := input_file_path.suffix.strip('.')):
         extension = await get_format(input_file)
         if 'mp4' in extension:
             extension = 'mp4'
