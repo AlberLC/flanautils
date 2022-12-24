@@ -104,6 +104,10 @@ def find_urls(text: str) -> list[str]:
     return re.findall('(?:http|www\.)[-a-zA-Z0-9()@:%_+.~#?&/=]+', text)
 
 
+def find_url_domains(text: str) -> list[str]:
+    return re.findall('(?:http.+?/|www\.|@)([\w.]+)(?!.*@)', text)
+
+
 def join_last_separator(elements: Iterable, separator: str, last_separator: str, final_char='') -> str:
     """
     Join all the elements in a string, using a separator for all of them except the last one, where it uses
