@@ -16,7 +16,13 @@ def chunks(elements: Sequence, size, lazy=False) -> Iterator[Sequence] | list[Se
 
 
 # noinspection PyShadowingNames,PyShadowingBuiltins
-def filter(elements: Iterable, target: Any = None, condition: Callable[..., bool] = None, cast_numbers=False, lazy=False) -> Iterator | list:
+def filter(
+    elements: Iterable,
+    target: Any = None,
+    condition: Callable[..., bool] = None,
+    cast_numbers=False,
+    lazy=False
+) -> Iterator | list:
     """
     Smart function that find anything in an iterable (classes, objects, ...).
 
@@ -128,7 +134,13 @@ def flatten_iterator(*args: Iterable, depth=None) -> Iterator:
             current_depth += 1
 
         for arg_ in args_:
-            if isinstance(arg_, Iterable) and not isinstance(arg_, (str, bytes)) and (depth_ is None or current_depth < depth_):
+            if (
+                    isinstance(arg_, Iterable)
+                    and
+                    not isinstance(arg_, (str, bytes))
+                    and
+                    (depth_ is None or current_depth < depth_)
+            ):
                 yield from flatten_iterator_(*arg_, depth_=depth_)
                 if depth_ is not None:
                     current_depth -= 1
@@ -208,7 +220,11 @@ def iterate_n(iterable: Iterable, n: int, default: Any = ...) -> Any | None:
     return iterate()
 
 
-def separate_self_from_args(args: tuple, exclude_self_types: str | Type | Iterable[str | Type], globals_: dict = None) -> tuple[Any, tuple]:
+def separate_self_from_args(
+    args: tuple,
+    exclude_self_types: str | Type | Iterable[str | Type],
+    globals_: dict = None
+) -> tuple[Any, tuple]:
     """
     Given a function arguments iterable: if the first arg is an instance of exclude_self_types return (args[0],
     args[1:]), else (None, args[1:]).
