@@ -3,9 +3,19 @@ import os
 import pathlib
 import pkgutil
 import subprocess
+from collections.abc import Iterator
 from contextlib import contextmanager
 
 from flanautils import strings
+
+
+def find_paths_by_stem(
+    stem: str,
+    directory: str | pathlib.Path = '',
+    lazy=False
+) -> Iterator[pathlib.Path] | list[pathlib.Path]:
+    generator_ = (path for path in pathlib.Path(directory).iterdir() if str(path).split('.', maxsplit=1)[0] == stem)
+    return generator_ if lazy else list(generator_)
 
 
 def resolve_path(path: str) -> pathlib.Path:
