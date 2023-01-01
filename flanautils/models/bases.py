@@ -81,8 +81,13 @@ class DictBase:
                         continue
                     case dict(dict_) if issubclass(type_, DictBase) and not lazy:
                         new_data[k] = decode_dict(type_, dict_)
-                    case [*_] as list_ if not isinstance(list_, set) and type_origin and type_origin is not typing.Union and issubclass(type_origin, Iterable) and issubclass(value_type, DictBase) and not lazy:
+                    case [*_, dict()] as list_ if not isinstance(list_, set) and type_origin and type_origin is not typing.Union and issubclass(type_origin, Iterable) and issubclass(value_type, DictBase) and not lazy:
                         new_data[k] = [decode_dict(value_type, dict_) for dict_ in list_]
+                    case [*_, bytes()] as list_ if not lazy:
+                        try:
+                            new_data[k] = [pickle.loads(bytes_) for bytes_ in list_]
+                        except (pickle.UnpicklingError, EOFError):
+                            pass
                     case bytes(bytes_):
                         try:
                             new_data[k] = pickle.loads(bytes_)
