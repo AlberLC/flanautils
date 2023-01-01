@@ -508,14 +508,21 @@ class MongoBase(DictBase, BytesBase):
     def object_id(self):
         return self._id
 
-    def pull_from_database(self, overwrite_fields: Iterable[str] = ('_id',), exclude_fields: Iterable[str] = ()):
+    def pull_from_database(
+        self,
+        overwrite_fields: Iterable[str] = ('_id',),
+        exclude_fields: Iterable[str] = (),
+        lazy=True
+    ):
         """
         Updates the values of the current object with the values of the same object located in the database.
 
-        By default, it updates the ObjectId and the attributes of the current object that contain None. You can force
-        write from database with database_priority=True (by default database_priority=False).
+        By default, it updates the ObjectId and the attributes of the current object that contain None. You can specify
+        which fields are overwritten with overwrite_fields.
 
-        Ignore the attributes specified in exclude.
+        Ignore the attributes specified in exclude_fields.
+
+        If lazy=False (True by default) continue pulling elements inside iterables.
         """
 
         if self.collection is None:
@@ -529,12 +536,12 @@ class MongoBase(DictBase, BytesBase):
             query = {}
             for k, v in unique_attributes.items():
                 if isinstance(v, MongoBase):
-                    v.pull_from_database(overwrite_fields, exclude_fields)
+                    v.pull_from_database(overwrite_fields, exclude_fields, lazy)
                     v = v._id
                 query[k] = v
 
         if document := self.collection.find_one(query):
-            for database_key, database_value in vars(self.from_dict(document)).items():
+            for database_key, database_value in vars(self.from_dict(document, lazy)).items():
                 self_value = getattr(self, database_key)
                 if (
                         database_key not in exclude_fields
@@ -561,7 +568,8 @@ class MongoBase(DictBase, BytesBase):
         pickle_types: tuple | list = (AbstractSet,),
         references=True,
         pull_overwrite_fields: Iterable[str] = ('_id',),
-        pull_exclude_fields: Iterable[str] = ()
+        pull_exclude_fields: Iterable[str] = (),
+        pull_lazy=True
     ):
         """
         Save (insert or update) the current object in the database.
@@ -571,14 +579,15 @@ class MongoBase(DictBase, BytesBase):
         references: if it's True (by default), saves the objects without redundancy (MongoBase -> ObjectId).
         pull_overwrite_fields: force overwriting those fields from the database before saving.
         pull_exclude_fields: ignore overwriting those fields from the database before saving.
+        pull_lazy: continue pulling elements inside iterables.
         """
 
         if self.collection is None:
             return
 
-        self.pull_from_database(pull_overwrite_fields, pull_exclude_fields)
+        self.pull_from_database(pull_overwrite_fields, pull_exclude_fields, pull_lazy)
         for referenced_object in self.get_referenced_objects(fields):
-            referenced_object.save(pickle_types=pickle_types, references=references, pull_overwrite_fields=pull_overwrite_fields, pull_exclude_fields=pull_exclude_fields)
+            referenced_object.save(pickle_types=pickle_types, references=references, pull_overwrite_fields=pull_overwrite_fields, pull_exclude_fields=pull_exclude_fields, pull_lazy=pull_lazy)
 
         data = self.to_mongo(pickle_types)
         if fields is not None:
