@@ -22,6 +22,8 @@ def _process_function(
     queue__: multiprocessing.Queue,
     **kwargs
 ):
+    """Utility function for multiprocessing purposes."""
+
     if asyncio.iscoroutinefunction(func):
         queue__.put(asyncio.run(func(*args, **kwargs)))
     else:
@@ -102,10 +104,16 @@ async def do_later(
     return asyncio.create_task(do_later_())
 
 
-async def poll_process(process_: multiprocessing.Process):
+async def poll_process(process_: multiprocessing.Process, sleep_seconds=1):
+    """
+    Starts the process and wait until the process is done.
+
+    Check every sleep_seconds (1 by default) if the process has finished.
+    """
+
     process_.start()
     while process_.is_alive():
-        await asyncio.sleep(1)
+        await asyncio.sleep(sleep_seconds)
 
 
 async def request(http_method: HTTPMethod, url: str, params: dict = None, headers: dict = None, data: dict = None, session: aiohttp.ClientSession = None, return_response=False, intents=5) -> bytes | str | list | dict | aiohttp.ClientResponse:
@@ -160,6 +168,13 @@ post_request = functools.partial(request, HTTPMethod.POST)
 
 
 async def run_process_async(func: Callable, *args, timeout: int | float = None, **kwargs) -> Any:
+    """
+    Executes the function with the provided arguments in another process in parallel, waits asynchronously for its
+    completion, and returns the result.
+
+    If the timeout seconds expire an asyncio.TimeoutError is raised.
+    """
+
     queue__ = multiprocessing.Queue()
     await wait_for_process(
         multiprocessing.Process(
@@ -175,7 +190,13 @@ async def run_process_async(func: Callable, *args, timeout: int | float = None, 
         pass
 
 
-async def wait_for_process(process_: multiprocessing.Process, timeout: int | float):
+async def wait_for_process(process_: multiprocessing.Process, timeout: int | float = None):
+    """
+    Wrapper function that starts the process and wait until the process is done.
+
+    If the timeout seconds expire the process is terminated and an asyncio.TimeoutError is raised.
+    """
+
     try:
         await asyncio.wait_for(poll_process(process_), timeout)
     except asyncio.TimeoutError:

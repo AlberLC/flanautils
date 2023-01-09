@@ -14,6 +14,12 @@ def find_paths_by_stem(
     directory: str | pathlib.Path = '',
     lazy=False
 ) -> Iterator[pathlib.Path] | list[pathlib.Path]:
+    """
+    Returns the pathlib.Path objects of the directory that have the stem.
+
+    If lazy=False (the default) it returns a list, if lazy=True, returns a generator.
+    """
+
     generator_ = (path for path in pathlib.Path(directory).iterdir() if str(path).split('.', maxsplit=1)[0] == stem)
     return generator_ if lazy else list(generator_)
 
