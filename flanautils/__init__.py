@@ -8,4 +8,5 @@ from flanautils.maths import *
 from flanautils.medias import *
 from flanautils.models import *
 from flanautils.oss import *
+from flanautils.requests import *
 from flanautils.strings import *
