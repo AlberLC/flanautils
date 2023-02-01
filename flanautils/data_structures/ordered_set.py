@@ -27,7 +27,7 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
     T = TypeVar('T', bound='OrdereSet')
 
     def __init__(self, *args: Any):
-        self._elements_dict = {element: None for element in iterables.flatten_iterator(*args, depth=self.FLATTEN_DEPTH)}
+        self._elements_dict = {element: None for element in iterables.flatten(*args, depth=self.FLATTEN_DEPTH, lazy=True)}
 
     def __add__(self, other: Any) -> OrderedSet[E]:
         return self | other
@@ -218,7 +218,7 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
         return new_ordered_set
 
     def difference_update(self, *args: Iterable):
-        self.discard_many(iterables.flatten_iterator(*args, depth=self.FLATTEN_DEPTH))
+        self.discard_many(iterables.flatten(*args, depth=self.FLATTEN_DEPTH, lazy=True))
 
     def discard(self, element: Any):
         try:
@@ -272,7 +272,7 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
         elements_to_delete = []
         for element in self:
             for arg in args:
-                if element not in iterables.flatten_iterator(arg, depth=self.FLATTEN_DEPTH):
+                if element not in iterables.flatten(arg, depth=self.FLATTEN_DEPTH, lazy=True):
                     elements_to_delete.append(element)
                     break
 
@@ -319,6 +319,6 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
         return new_ordered_set
 
     def update(self, *args: Iterable):
-        self.add_many(iterables.flatten_iterator(*args, depth=self.FLATTEN_DEPTH))
+        self.add_many(iterables.flatten(*args, depth=self.FLATTEN_DEPTH, lazy=True))
 
     union_update = update

@@ -109,25 +109,27 @@ def find(elements: Iterable, target: Any = None, condition: Callable[..., bool] 
     return next(filter(elements, target, condition, cast_numbers, lazy=True), None)
 
 
-def flatten_iterator(*args: Iterable, depth=None) -> Iterator:
+def flatten(*args: Iterable, depth=None, lazy=False) -> Iterator | list:
     """
     Iterates and flattens iterables recursively according to the specified depth.
 
     If depth=None (the default) it flattens recursively until it finds no iterable.
 
-    >>> type(flatten_iterator([1, 2, [3, 4, ['cinco']]]))
+    >>> type(flatten([1, 2, [3, 4, ['cinco']]]))
+    <class 'list'>
+    >>> type(flatten([1, 2, [3, 4, ['cinco']]], lazy=True))
     <class 'generator'>
-    >>> list(flatten_iterator([1, 2, [3, 4, ['cinco']]]))
+    >>> flatten([1, 2, [3, 4, ['cinco']]])
     [1, 2, 3, 4, 'cinco']
-    >>> list(flatten_iterator([1, 2, [3, 4, ['cinco']]], depth=1))
+    >>> flatten([1, 2, [3, 4, ['cinco']]], depth=1)
     [1, 2, [3, 4, ['cinco']]]
-    >>> list(flatten_iterator([1, 2, [3, 4, ['cinco']]], depth=2))
+    >>> flatten([1, 2, [3, 4, ['cinco']]], depth=2)
     [1, 2, 3, 4, ['cinco']]
     """
 
     current_depth = -1
 
-    def flatten_iterator_(*args_: Iterable, depth_=None) -> Iterator:
+    def flatten_generator(*args_: Iterable, depth_=None) -> Iterator:
         nonlocal current_depth
 
         if depth_ is not None:
@@ -141,13 +143,14 @@ def flatten_iterator(*args: Iterable, depth=None) -> Iterator:
                     and
                     (depth_ is None or current_depth < depth_)
             ):
-                yield from flatten_iterator_(*arg_, depth_=depth_)
+                yield from flatten_generator(*arg_, depth_=depth_)
                 if depth_ is not None:
                     current_depth -= 1
             else:
                 yield arg_
 
-    return flatten_iterator_(*args, depth_=depth)
+    generator_ = flatten_generator(*args, depth_=depth)
+    return generator_ if lazy else list(generator_)
 
 
 @overload
