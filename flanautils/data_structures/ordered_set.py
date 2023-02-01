@@ -186,15 +186,6 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
     def _json_repr(self) -> Any:
         return [json.loads(element.to_json()) if isinstance(element, JSONBASE) else pickle.dumps(element) for element in self]
 
-    def positive_index(self, index_: int) -> int:
-        if index_ < 0:
-            index_ += len(self)
-        return index_
-
-    @classmethod
-    def ordered_set_if_not_set(cls: Type[T], arg: Any) -> AbstractSet | T:
-        return arg if isinstance(arg, AbstractSet) else cls(iterables.flatten_iterator(arg))
-
     def add(self, element: Any):
         self._elements_dict[element] = None
 
@@ -287,10 +278,19 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
     def is_superset(self, other) -> bool:
         return self >= other
 
+    @classmethod
+    def ordered_set_if_not_set(cls: Type[T], arg: Any) -> AbstractSet | T:
+        return arg if isinstance(arg, AbstractSet) else cls(iterables.flatten(arg, lazy=True))
+
     def pop(self, index=-1) -> E:
         element = self[index]
         self.discard(element)
         return element
+
+    def positive_index(self, index_: int) -> int:
+        if index_ < 0:
+            index_ += len(self)
+        return index_
 
     def reverse(self):
         reversed_self = list(reversed(self))
