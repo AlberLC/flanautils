@@ -3,6 +3,7 @@ import os
 import pathlib
 import pkgutil
 import subprocess
+import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
 
@@ -69,18 +70,58 @@ def set_windows_environment_variables(variables: str | dict | pathlib.Path, sear
 
 
 @contextmanager
+def suppress_low_level_stderr():
+    """A context manager that redirects low level stderr to devnull."""
+
+    with open(os.devnull, 'w') as err_null_file:
+        stderr_fileno = sys.stderr.fileno()
+        old_stderr_fileno = os.dup(sys.stderr.fileno())
+        old_stderr = sys.stderr
+
+        os.dup2(err_null_file.fileno(), stderr_fileno)
+        sys.stderr = err_null_file
+
+        yield
+
+        sys.stderr = old_stderr
+        os.dup2(old_stderr_fileno, stderr_fileno)
+
+        os.close(old_stderr_fileno)
+
+
+@contextmanager
+def suppress_low_level_stdout():
+    """A context manager that redirects low level stdout to devnull."""
+
+    with open(os.devnull, 'w') as out_null_file:
+        stdout_fileno = sys.stdout.fileno()
+        old_stdout_fileno = os.dup(sys.stdout.fileno())
+        old_stdout = sys.stdout
+
+        os.dup2(out_null_file.fileno(), stdout_fileno)
+        sys.stdout = out_null_file
+
+        yield
+
+        sys.stdout = old_stdout
+        os.dup2(old_stdout_fileno, stdout_fileno)
+
+        os.close(old_stdout_fileno)
+
+
+@contextmanager
 def suppress_stderr():
     """A context manager that redirects stderr to devnull."""
 
-    with open(os.devnull, 'w') as fnull:
-        with contextlib.redirect_stderr(fnull) as err:
-            yield err
+    with open(os.devnull, 'w') as null_file:
+        with contextlib.redirect_stderr(null_file):
+            yield
 
 
 @contextmanager
 def suppress_stdout():
     """A context manager that redirects stdout to devnull."""
 
-    with open(os.devnull, 'w') as fnull:
-        with contextlib.redirect_stdout(fnull) as out:
-            yield out
+    with open(os.devnull, 'w') as null_file:
+        with contextlib.redirect_stdout(null_file):
+            yield
