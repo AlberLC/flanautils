@@ -113,15 +113,13 @@ def suppress_low_level_stdout():
 def suppress_stderr():
     """A context manager that redirects stderr to devnull."""
 
-    with open(os.devnull, 'w') as null_file:
-        with contextlib.redirect_stderr(null_file):
-            yield
+    with open(os.devnull, 'w') as null_file, contextlib.redirect_stderr(null_file):
+        yield
 
 
 @contextmanager
 def suppress_stdout():
     """A context manager that redirects stdout to devnull."""
 
-    with open(os.devnull, 'w') as null_file:
-        with contextlib.redirect_stdout(null_file):
-            yield
+    with open(os.devnull, 'w') as null_file, contextlib.redirect_stdout(null_file):
+        yield
