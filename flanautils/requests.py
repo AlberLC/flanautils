@@ -22,18 +22,21 @@ async def request(http_method: HTTPMethod, url: str, params: dict = None, header
     Raise exceptions.ResponseError if response.status != 200.
     """
 
+    if not url.startswith('http'):
+        url = f'https://{url}'
+
+    if params:
+        params = {str(k): str(v) for k, v in params.items()}
+
     session_ = session or aiohttp.ClientSession()
 
-    if http_method is HTTPMethod.GET:
-        http_method = session_.get
-    elif http_method is HTTPMethod.POST:
-        http_method = session_.post
-    else:
-        raise ValueError('Bad http method.')
-
     try:
-        if params:
-            params = {str(k): str(v) for k, v in params.items()}
+        if http_method is HTTPMethod.GET:
+            http_method = session_.get
+        elif http_method is HTTPMethod.POST:
+            http_method = session_.post
+        else:
+            raise ValueError('Bad http method.')
 
         for intent in range(intents):
             try:
@@ -50,7 +53,7 @@ async def request(http_method: HTTPMethod, url: str, params: dict = None, header
                     else:
                         return await response.read()
             except aiohttp.client_exceptions.ServerDisconnectedError:
-                if intent == 4:
+                if intent == intents - 1:
                     raise
                 await asyncio.sleep(1)
     finally:
@@ -63,8 +66,6 @@ post_request = functools.partial(request, HTTPMethod.POST)
 
 
 async def resolve_real_url(url: str, headers=None) -> str:
-    if not url.startswith('http'):
-        url = f'https://{url}'
     if headers is None:
         headers = {'User-Agent': constants.USER_AGENT}
 
