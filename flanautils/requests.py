@@ -63,6 +63,9 @@ post_request = functools.partial(request, HTTPMethod.POST)
 
 
 async def resolve_real_url(url: str, headers=None) -> str:
+    if not url.startswith('http'):
+        url = f'https://{url}'
     if headers is None:
         headers = {'User-Agent': constants.USER_AGENT}
+
     return str((await get_request(url, headers=headers, return_response=True)).url)
