@@ -11,21 +11,37 @@ class TimeUnits(FlanaBase):
 
     You can represent that tense in textual form according to the language.
 
-    >>> time_units = TimeUnits(hours=1.5, seconds=130)
+    >>> time_units = TimeUnits(hours=1.5, seconds=120.5)
     >>> time_units
-    TimeUnits(years=0, months=0, weeks=0, days=0, hours=1, minutes=32, seconds=10)
+    TimeUnits(years=0, months=0, weeks=0, days=0, hours=1, minutes=32, seconds=0.5)
     >>> time_units.to_words()
-    '1 hora, 32 minutos y 10 segundos'
+    '1 hora y 32 minutos'
+    >>> time_units.to_words(integer_seconds=False)
+    '1 hora, 32 minutos y 0.5 segundos'
     >>> time_units = TimeUnits(years=1/12, days=1, minutes=0.1)
     >>> time_units
-    TimeUnits(years=0, months=1, weeks=0, days=1, hours=0, minutes=0, seconds=6)
+    TimeUnits(years=0, months=1, weeks=0, days=1, hours=0, minutes=0, seconds=6.0)
     >>> time_units.to_words()
     '1 mes, 1 día y 6 segundos'
     >>> time_units = TimeUnits(days=180)
     >>> time_units
-    TimeUnits(years=0, months=5, weeks=3, days=6, hours=21, minutes=59, seconds=54)
+    TimeUnits(years=0, months=5, weeks=3, days=6, hours=21, minutes=59, seconds=54.23999999868329)
     >>> time_units.to_words()
     '5 meses, 3 semanas, 6 días, 21 horas, 59 minutos y 54 segundos'
+    >>> time_units.to_years()
+    0.49315046875595886
+    >>> time_units.to_months()
+    5.917805625071506
+    >>> time_units.to_weeks()
+    25.714285714285715
+    >>> time_units.to_days()
+    180.0
+    >>> time_units.to_hours()
+    4320.0
+    >>> time_units.to_minutes()
+    259200.0
+    >>> time_units.to_seconds()
+    15552000.0
     """
 
     years: int = 0
@@ -34,7 +50,7 @@ class TimeUnits(FlanaBase):
     days: int = 0
     hours: int = 0
     minutes: int = 0
-    seconds: int = 0
+    seconds: float = 0
 
     def __init__(self, years: float = 0, months: float = 0, weeks: float = 0, days: float = 0, hours: float = 0, minutes: float = 0, seconds: float = 0):
         quotient, remainder = divmod(seconds, 60)
@@ -59,7 +75,7 @@ class TimeUnits(FlanaBase):
 
         quotient, remainder = divmod(months, 12)
         months = remainder
-        years += int(quotient)
+        years += quotient
 
         months += years % 1 * 12
         weeks += months % 1 * constants.WEEKS_IN_A_MONTH
@@ -74,9 +90,39 @@ class TimeUnits(FlanaBase):
         self.days = int(days)
         self.hours = int(hours)
         self.minutes = int(minutes)
-        self.seconds = int(seconds)
+        self.seconds = seconds
 
-    def to_words(self, language='es') -> str:
+    def to_years(self) -> float:
+        return self.to_months() / 12
+
+    def to_months(self) -> float:
+        return self.to_weeks() / constants.WEEKS_IN_A_MONTH
+
+    def to_weeks(self) -> float:
+        return self.to_days() / 7
+
+    def to_days(self) -> float:
+        return self.to_hours() / 24
+
+    def to_hours(self) -> float:
+        return self.to_minutes() / 60
+
+    def to_minutes(self) -> float:
+        return self.to_seconds() / 60
+
+    def to_seconds(self) -> float:
+        months = 12 * self.years
+        weeks = constants.WEEKS_IN_A_MONTH * (self.months + months)
+        days = 7 * (self.weeks + weeks)
+        hours = 24 * (self.days + days)
+        minutes = 60 * (self.hours + hours)
+        seconds = 60 * (self.minutes + minutes)
+
+        return self.seconds + seconds
+
+    total_seconds = to_seconds
+
+    def to_words(self, language='es', integer_seconds=True) -> str:
         if language == 'es':
             translation = {
                 'years': {'singular': 'año', 'plural': 'años'},
@@ -104,15 +150,8 @@ class TimeUnits(FlanaBase):
         else:
             raise NotImplementedError('not implemented for that language')
 
-        words = (f"{v} {translation[k]['singular'] if v == 1 else translation[k]['plural']}" for k, v in vars(self).items() if v)
+        self_vars = vars(self).copy()
+        if integer_seconds:
+            self_vars['seconds'] = int(self_vars['seconds'])
+        words = (f"{v} {translation[k]['singular'] if v == 1 else translation[k]['plural']}" for k, v in self_vars.items() if v)
         return strings.join_last_separator(words, separator, last_separator)
-
-    def total_seconds(self) -> int:
-        months = 12 * self.years
-        weeks = constants.WEEKS_IN_A_MONTH * (self.months + months)
-        days = 7 * (self.weeks + weeks)
-        hours = 24 * (self.days + days)
-        minutes = 60 * (self.hours + hours)
-        seconds = 60 * (self.minutes + minutes)
-
-        return self.seconds + seconds
