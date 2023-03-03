@@ -313,7 +313,7 @@ class TestOrderedSet(unittest.TestCase):
 
     @repeat(REPEAT_TIMES)
     def test_copy(self):
-        elements = test_utils.randomcollections(random.randint(0, 5))
+        elements = test_utils.random_collections(random.randint(0, 5))
         s1 = OrderedSet(*elements)
         s1_copy = s1.copy()
 
