@@ -39,10 +39,13 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
         return other | self
 
     def __and__(self, other: Any) -> OrderedSet[E]:
-        return OrderedSet(super().__and__(self.ordered_set_if_not_set(other)))
+        # the super implementation reverses the order so the code is the same but reversed to maintain the order
+        # noinspection PyUnresolvedReferences
+        return self._from_iterable(value for value in self if value in self.ordered_set_if_not_set(other))
 
     def __iand__(self, other: Any) -> OrderedSet[E]:
-        return OrderedSet(super().__iand__(self.ordered_set_if_not_set(other)))
+        # noinspection PyTypeChecker
+        return super().__iand__(self.ordered_set_if_not_set(other))
 
     def __rand__(self, other: Any) -> OrderedSet[E]:
         return self.ordered_set_if_not_set(other) & self
@@ -66,7 +69,8 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
         return True
 
     def __getitem__(self, item) -> E | OrderedSet[E]:
-        ordered_set = OrderedSet()
+        # noinspection PyUnresolvedReferences
+        ordered_set = self._from_iterable(())
         len_self = len(self)
 
         if isinstance(item, slice):
@@ -148,10 +152,12 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
         return len(self._elements_dict)
 
     def __or__(self, other: Any) -> OrderedSet[E]:
-        return OrderedSet(super().__or__(self.ordered_set_if_not_set(other)))
+        # noinspection PyTypeChecker
+        return super().__or__(self.ordered_set_if_not_set(other))
 
     def __ior__(self, other: Any) -> OrderedSet[E]:
-        return OrderedSet(super().__ior__(self.ordered_set_if_not_set(other)))
+        # noinspection PyTypeChecker
+        return super().__ior__(self.ordered_set_if_not_set(other))
 
     def __ror__(self, other: Any) -> OrderedSet[E]:
         return self.ordered_set_if_not_set(other) | self
@@ -166,10 +172,12 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
         return f"#{{{', '.join(repr(element) for element in self)}}}"
 
     def __sub__(self, other: Any) -> OrderedSet[E]:
-        return OrderedSet(super().__sub__(self.ordered_set_if_not_set(other)))
+        # noinspection PyTypeChecker
+        return super().__sub__(self.ordered_set_if_not_set(other))
 
     def __isub__(self, other: Any) -> OrderedSet[E]:
-        return OrderedSet(super().__isub__(self.ordered_set_if_not_set(other)))
+        # noinspection PyTypeChecker
+        return super().__isub__(self.ordered_set_if_not_set(other))
 
     def __rsub__(self, other: Any) -> OrderedSet[E]:
         return self.ordered_set_if_not_set(other) - self
@@ -192,10 +200,12 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
             pass
 
     def copy(self) -> OrderedSet[E]:
-        return OrderedSet(self)
+        # noinspection PyUnresolvedReferences
+        return self._from_iterable(self)
 
     def difference(self, *args: Iterable) -> OrderedSet[E]:
-        new_ordered_set = OrderedSet(self)
+        # noinspection PyUnresolvedReferences
+        new_ordered_set = self._from_iterable(self)
         new_ordered_set.difference_update(*args)
         return new_ordered_set
 
@@ -234,19 +244,17 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
         if element in self:
             return
 
-        i = self.positive_index(i)
-
         deleted_elements = []
-        for i_, element_ in enumerate(list(self)):
-            if i <= i_:
-                self.discard(element_)
-                deleted_elements.append(element_)
+        for element_ in list(self)[i:]:
+            self.discard(element_)
+            deleted_elements.append(element_)
 
         self.add(element)
         self.add_many(deleted_elements)
 
     def intersection(self, *args: Iterable) -> OrderedSet[E]:
-        new_ordered_set = OrderedSet(self)
+        # noinspection PyUnresolvedReferences
+        new_ordered_set = self._from_iterable(self)
         new_ordered_set.intersection_update(*args)
         return new_ordered_set
 
@@ -294,7 +302,8 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
         self.add_many(sorted_values)
 
     def symmetric_difference(self, *args: Iterable) -> OrderedSet[E]:
-        new_ordered_set = OrderedSet(self)
+        # noinspection PyUnresolvedReferences
+        new_ordered_set = self._from_iterable(self)
         new_ordered_set.symmetric_difference_update(*args)
         return new_ordered_set
 
@@ -305,7 +314,8 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
             self.update(other_minus_self)
 
     def union(self, *args: Iterable) -> OrderedSet[E]:
-        new_ordered_set = OrderedSet(self)
+        # noinspection PyUnresolvedReferences
+        new_ordered_set = self._from_iterable(self)
         new_ordered_set.update(*args)
         return new_ordered_set
 
