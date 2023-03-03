@@ -26,6 +26,7 @@ async def do_every(
     func: Callable,
     *args,
     times: int = None,
+    do_first_now=True,
     exceptions_to_capture: Type[Exception] | Iterable[Type[Exception]] = (),
     **kwargs
 ) -> Task:
@@ -33,6 +34,8 @@ async def do_every(
     Corutine function that runs the function every time provided in seconds or datetime.timedelta.
 
     You can specify a number of times.
+
+    If you want to run the function the first time before waiting set do_first_now=True (the default).
 
     Exceptions specified in exceptions_to_capture are returned if raised when the task is completed.
     """
@@ -47,22 +50,28 @@ async def do_every(
 
     async def do_every_():
         if times is None:
+            if do_first_now:
+                await do_()
             while True:
+                await asyncio.sleep(seconds)
                 try:
                     await do_()
                 except (*exceptions_to_capture,):
                     pass
-                await asyncio.sleep(seconds)
         else:
             results = []
+            if do_first_now:
+                results.append(await do_())
+                if times == 1:
+                    return results
             while True:
+                await asyncio.sleep(seconds)
                 try:
                     results.append(await do_())
                 except (*exceptions_to_capture,) as e:
                     results.append(e)
                 if len(results) == times:
                     return results
-                await asyncio.sleep(seconds)
 
     return asyncio.create_task(do_every_())
 
