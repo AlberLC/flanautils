@@ -14,7 +14,7 @@ def random_elements(k=1) -> list:
     ) for _ in range(k)]
 
 
-def randomcollections(k=1) -> list:
+def random_collections(k=1) -> list:
     return [random.choice(
         (
             *random_elements(random.randint(0, 3)),
