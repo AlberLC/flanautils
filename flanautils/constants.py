@@ -25,8 +25,7 @@ SYMBOLS = ('!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.',
            '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~', '¡', '¨', 'ª', '¬', '´', '·', 'º', '¿', '€')
 TEXT_TO_NUMBER_MAX_WORD_LENGTH = 25
 TIME_UNITS_SCORE_MATCHING = 0.9
-USER_AGENT = 'Instagram 123.0.0.21.114 (iPhone; CPU iPhone OS 11_4 like Mac OS X; en_US; en-US; scale=2.00; 750x1334) AppleWebKit/605.1.15'
-USER_AGENT_2 = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'
 WEEKS_IN_A_MONTH = 4.34524
 WEEKS_IN_A_YEAR = WEEKS_IN_A_MONTH * 12
 
