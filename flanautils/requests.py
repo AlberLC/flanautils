@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import html
+import random
 
 import aiohttp
 import aiohttp.client_exceptions
@@ -67,6 +68,5 @@ post_request = functools.partial(request, HTTPMethod.POST)
 
 async def resolve_real_url(url: str, headers=None) -> str:
     if headers is None:
-        headers = {'User-Agent': constants.USER_AGENT}
-
+        headers = {'User-Agent': random.choice(constants.GOOGLE_BOT_USER_AGENTS)}
     return str((await get_request(url, headers=headers, return_response=True)).url)
