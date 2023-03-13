@@ -81,12 +81,13 @@ def suppress_low_level_stderr():
         os.dup2(err_null_file.fileno(), stderr_fileno)
         sys.stderr = err_null_file
 
-        yield
+        try:
+            yield
+        finally:
+            sys.stderr = old_stderr
+            os.dup2(old_stderr_fileno, stderr_fileno)
 
-        sys.stderr = old_stderr
-        os.dup2(old_stderr_fileno, stderr_fileno)
-
-        os.close(old_stderr_fileno)
+            os.close(old_stderr_fileno)
 
 
 @contextmanager
@@ -101,12 +102,13 @@ def suppress_low_level_stdout():
         os.dup2(out_null_file.fileno(), stdout_fileno)
         sys.stdout = out_null_file
 
-        yield
+        try:
+            yield
+        finally:
+            sys.stdout = old_stdout
+            os.dup2(old_stdout_fileno, stdout_fileno)
 
-        sys.stdout = old_stdout
-        os.dup2(old_stdout_fileno, stdout_fileno)
-
-        os.close(old_stdout_fileno)
+            os.close(old_stdout_fileno)
 
 
 @contextmanager
