@@ -68,10 +68,6 @@ class TimeUnits(FlanaBase):
 
     def __init__(self, years: float = 0, months: float = 0, weeks: float = 0, days: float = 0, hours: float = 0, minutes: float = 0, seconds: float = 0):
         weeks += days / 7 + hours / 168 + minutes / 10080 + seconds / 604800
-        days = 0
-        hours = 0
-        minutes = 0
-        seconds = 0
 
         years, remainder = divmod(years, 1)
         months += remainder * 12
