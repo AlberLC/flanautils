@@ -4,14 +4,25 @@ from flanautils import constants, strings
 from flanautils.models.bases import FlanaBase
 
 
+def _round_if_close_to_unit(number: float) -> float:
+    rounded = round(number, 10)
+    integer_part = int(number)
+    return float(rounded) if rounded in (integer_part, integer_part + 1) else number
+
+
 @dataclass(unsafe_hash=True)
 class TimeUnits(FlanaBase):
     """
     Represents the time information grouping it into typical units.
 
     You can represent that tense in textual form according to the language.
+
     >>> TimeUnits(hours=1000)
-    TimeUnits(years=0, months=1, weeks=1, days=4, hours=5, minutes=59, seconds=58.847999999301805)
+    TimeUnits(years=0, months=1, weeks=1, days=4, hours=5, minutes=59, seconds=58.847999999838976)
+    >>> TimeUnits(hours=7*24)
+    TimeUnits(years=0, months=0, weeks=1, days=0, hours=0, minutes=0, seconds=0.0)
+    >>> TimeUnits(hours=7*24-1)
+    TimeUnits(years=0, months=0, weeks=0, days=6, hours=23, minutes=0, seconds=0.0)
     >>> TimeUnits(minutes=2.4, seconds=59)
     TimeUnits(years=0, months=0, weeks=0, days=0, hours=0, minutes=3, seconds=23.0)
     >>> time_units = TimeUnits(hours=1.5, seconds=120.5)
@@ -23,7 +34,7 @@ class TimeUnits(FlanaBase):
     '1 hora, 32 minutos y 0.49999999999954525 segundos'
     >>> time_units = TimeUnits(years=1/12, days=1, minutes=0.1)
     >>> time_units
-    TimeUnits(years=0, months=1, weeks=0, days=1, hours=0, minutes=0, seconds=6.000000000000938)
+    TimeUnits(years=0, months=1, weeks=0, days=1, hours=0, minutes=0, seconds=6.0)
     >>> time_units.to_words()
     '1 mes, 1 día y 6 segundos'
     >>> time_units = TimeUnits(days=170)
@@ -56,14 +67,11 @@ class TimeUnits(FlanaBase):
     seconds: float = 0
 
     def __init__(self, years: float = 0, months: float = 0, weeks: float = 0, days: float = 0, hours: float = 0, minutes: float = 0, seconds: float = 0):
-        minutes += seconds / 60
-        seconds = 0
-        hours += minutes / 60
-        minutes = 0
-        days += hours / 24
-        hours = 0
-        weeks += days / 7
+        weeks += days / 7 + hours / 168 + minutes / 10080 + seconds / 604800
         days = 0
+        hours = 0
+        minutes = 0
+        seconds = 0
 
         years, remainder = divmod(years, 1)
         months += remainder * 12
@@ -78,16 +86,16 @@ class TimeUnits(FlanaBase):
         years += quotient
 
         weeks, remainder = divmod(weeks, 1)
-        days += remainder * 7
+        days = _round_if_close_to_unit(remainder * 7)
 
         days, remainder = divmod(days, 1)
-        hours += remainder * 24
+        hours = _round_if_close_to_unit(remainder * 24)
 
         hours, remainder = divmod(hours, 1)
-        minutes += remainder * 60
+        minutes = _round_if_close_to_unit(remainder * 60)
 
         minutes, remainder = divmod(minutes, 1)
-        seconds += remainder * 60
+        seconds = _round_if_close_to_unit(remainder * 60)
 
         self.years = int(years)
         self.months = int(months)
