@@ -10,38 +10,41 @@ class TimeUnits(FlanaBase):
     Represents the time information grouping it into typical units.
 
     You can represent that tense in textual form according to the language.
-
+    >>> TimeUnits(hours=1000)
+    TimeUnits(years=0, months=1, weeks=1, days=4, hours=5, minutes=59, seconds=58.847999999301805)
+    >>> TimeUnits(minutes=2.4, seconds=59)
+    TimeUnits(years=0, months=0, weeks=0, days=0, hours=0, minutes=3, seconds=23.0)
     >>> time_units = TimeUnits(hours=1.5, seconds=120.5)
     >>> time_units
-    TimeUnits(years=0, months=0, weeks=0, days=0, hours=1, minutes=32, seconds=0.5)
+    TimeUnits(years=0, months=0, weeks=0, days=0, hours=1, minutes=32, seconds=0.49999999999954525)
     >>> time_units.to_words()
     '1 hora y 32 minutos'
     >>> time_units.to_words(integer_seconds=False)
-    '1 hora, 32 minutos y 0.5 segundos'
+    '1 hora, 32 minutos y 0.49999999999954525 segundos'
     >>> time_units = TimeUnits(years=1/12, days=1, minutes=0.1)
     >>> time_units
-    TimeUnits(years=0, months=1, weeks=0, days=1, hours=0, minutes=0, seconds=6.0)
+    TimeUnits(years=0, months=1, weeks=0, days=1, hours=0, minutes=0, seconds=6.000000000000938)
     >>> time_units.to_words()
     '1 mes, 1 día y 6 segundos'
-    >>> time_units = TimeUnits(days=180)
+    >>> time_units = TimeUnits(days=170)
     >>> time_units
-    TimeUnits(years=0, months=5, weeks=3, days=6, hours=21, minutes=59, seconds=54.23999999868329)
+    TimeUnits(years=0, months=5, weeks=2, days=3, hours=21, minutes=59, seconds=54.23999999806938)
     >>> time_units.to_words()
-    '5 meses, 3 semanas, 6 días, 21 horas, 59 minutos y 54 segundos'
+    '5 meses, 2 semanas, 3 días, 21 horas, 59 minutos y 54 segundos'
     >>> time_units.to_years()
-    0.49315046875595886
+    0.4657532204917389
     >>> time_units.to_months()
-    5.917805625071506
+    5.5890386459008665
     >>> time_units.to_weeks()
-    25.714285714285715
+    24.285714285714285
     >>> time_units.to_days()
-    180.0
+    170.0
     >>> time_units.to_hours()
-    4320.0
+    4080.0
     >>> time_units.to_minutes()
-    259200.0
+    244800.0
     >>> time_units.to_seconds()
-    15552000.0
+    14688000.0
     """
 
     years: int = 0
@@ -53,36 +56,38 @@ class TimeUnits(FlanaBase):
     seconds: float = 0
 
     def __init__(self, years: float = 0, months: float = 0, weeks: float = 0, days: float = 0, hours: float = 0, minutes: float = 0, seconds: float = 0):
-        quotient, remainder = divmod(seconds, 60)
-        seconds = remainder
-        minutes += quotient
+        minutes += seconds / 60
+        seconds = 0
+        hours += minutes / 60
+        minutes = 0
+        days += hours / 24
+        hours = 0
+        weeks += days / 7
+        days = 0
 
-        quotient, remainder = divmod(minutes, 60)
-        minutes = remainder
-        hours += quotient
+        years, remainder = divmod(years, 1)
+        months += remainder * 12
 
-        quotient, remainder = divmod(hours, 24)
-        hours = remainder
-        days += quotient
+        months, remainder = divmod(months, 1)
+        weeks += remainder * constants.WEEKS_IN_A_MONTH
 
-        quotient, remainder = divmod(days, 7)
-        days = remainder
-        weeks += quotient
-
-        quotient, remainder = divmod(weeks, constants.WEEKS_IN_A_MONTH)
-        weeks = remainder
+        quotient, weeks = divmod(weeks, constants.WEEKS_IN_A_MONTH)
         months += quotient
 
-        quotient, remainder = divmod(months, 12)
-        months = remainder
+        quotient, months = divmod(months, 12)
         years += quotient
 
-        months += years % 1 * 12
-        weeks += months % 1 * constants.WEEKS_IN_A_MONTH
-        days += weeks % 1 * 7
-        hours += days % 1 * 24
-        minutes += hours % 1 * 60
-        seconds += minutes % 1 * 60
+        weeks, remainder = divmod(weeks, 1)
+        days += remainder * 7
+
+        days, remainder = divmod(days, 1)
+        hours += remainder * 24
+
+        hours, remainder = divmod(hours, 1)
+        minutes += remainder * 60
+
+        minutes, remainder = divmod(minutes, 1)
+        seconds += remainder * 60
 
         self.years = int(years)
         self.months = int(months)
