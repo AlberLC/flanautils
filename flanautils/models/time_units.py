@@ -4,8 +4,8 @@ from flanautils import constants, strings
 from flanautils.models.bases import FlanaBase
 
 
-def _round_if_close_to_unit(number: float) -> float:
-    rounded = round(number, 10)
+def _round_if_close_to_unit(number: float, n_digits: int = 10) -> float:
+    rounded = round(number, n_digits)
     integer_part = int(number)
     return float(rounded) if rounded in (integer_part, integer_part + 1) else number
 
