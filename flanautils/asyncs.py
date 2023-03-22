@@ -7,6 +7,18 @@ from collections.abc import Callable, Iterable
 from typing import Any, Type
 
 
+async def _do(
+    func: Callable,
+    *args,
+    exceptions_to_capture: Type[Exception] | Iterable[Type[Exception]] = (),
+    **kwargs
+) -> Any:
+    try:
+        return await result if asyncio.iscoroutine(result := func(*args, **kwargs)) else result
+    except (*exceptions_to_capture,) as e:
+        return e
+
+
 def _process_function(
     func: Callable,
     *args,
@@ -40,40 +52,29 @@ async def do_every(
     Exceptions specified in exceptions_to_capture are returned if raised when the task is completed.
     """
 
+    async def do_every_(times_: int):
+        if times_ is None:
+            if do_first_now:
+                await _do(func, *args, exceptions_to_capture=exceptions_to_capture, **kwargs)
+            while True:
+                await asyncio.sleep(seconds)
+                await _do(func, *args, exceptions_to_capture=exceptions_to_capture, **kwargs)
+        else:
+            results = []
+            if do_first_now and times > 0:
+                results.append(await _do(func, *args, exceptions_to_capture=exceptions_to_capture, **kwargs))
+                times_ -= 1
+            for _ in range(times_):
+                await asyncio.sleep(seconds)
+                results.append(await _do(func, *args, exceptions_to_capture=exceptions_to_capture, **kwargs))
+            return results
+
     if isinstance(seconds, datetime.timedelta):
         seconds = seconds.total_seconds()
     if not isinstance(exceptions_to_capture, Iterable):
         exceptions_to_capture = (exceptions_to_capture,)
 
-    async def do_() -> Any:
-        return await result if asyncio.iscoroutine(result := func(*args, **kwargs)) else result
-
-    async def do_every_():
-        if times is None:
-            if do_first_now:
-                await do_()
-            while True:
-                await asyncio.sleep(seconds)
-                try:
-                    await do_()
-                except (*exceptions_to_capture,):
-                    pass
-        else:
-            results = []
-            if do_first_now:
-                results.append(await do_())
-                if times == 1:
-                    return results
-            while True:
-                await asyncio.sleep(seconds)
-                try:
-                    results.append(await do_())
-                except (*exceptions_to_capture,) as e:
-                    results.append(e)
-                if len(results) == times:
-                    return results
-
-    return asyncio.create_task(do_every_())
+    return asyncio.create_task(do_every_(times))
 
 
 async def do_later(
@@ -89,17 +90,14 @@ async def do_later(
     Exceptions specified in exceptions_to_capture are returned if raised.
     """
 
+    async def do_later_():
+        await asyncio.sleep(seconds)
+        return await _do(func, *args, exceptions_to_capture=exceptions_to_capture, **kwargs)
+
     if isinstance(seconds, datetime.timedelta):
         seconds = seconds.total_seconds()
     if not isinstance(exceptions_to_capture, Iterable):
         exceptions_to_capture = (exceptions_to_capture,)
-
-    async def do_later_():
-        await asyncio.sleep(seconds)
-        try:
-            return await result if asyncio.iscoroutine(result := func(*args, **kwargs)) else result
-        except (*exceptions_to_capture,) as e:
-            return e
 
     return asyncio.create_task(do_later_())
 
