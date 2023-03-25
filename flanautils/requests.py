@@ -1,6 +1,5 @@
 import asyncio
 import functools
-import html
 import random
 
 import aiohttp
@@ -12,13 +11,23 @@ from flanautils.exceptions import ResponseError
 from flanautils.models.enums import HTTPMethod
 
 
-async def request(http_method: HTTPMethod, url: str, params: dict = None, headers: dict = None, data: dict = None, session: aiohttp.ClientSession = None, return_response=False, intents=5) -> bytes | str | list | dict | aiohttp.ClientResponse:
+async def request(
+    http_method: HTTPMethod,
+    url: str,
+    params: dict = None,
+    headers: dict = None,
+    data: dict = None,
+    session: aiohttp.ClientSession = None,
+    clean_text=True,
+    return_response=False,
+    attempts=5
+) -> bytes | str | list | dict | aiohttp.ClientResponse:
     """
     Function that simplifies asynchronous http requests with aiohttp.
 
     If return_response=True it returns the response object instead of the response data (by default return_response=False).
 
-    Retry the request if it fails up to the number of times specified by intents (by default intents=5).
+    Retry the request if it fails up to the number of times specified by tries (by default tries=5).
 
     Raise exceptions.ResponseError if response.status != 200.
     """
@@ -39,7 +48,7 @@ async def request(http_method: HTTPMethod, url: str, params: dict = None, header
         else:
             raise ValueError('Bad http method.')
 
-        for intent in range(intents):
+        for attempt in range(attempts - 1, -1, -1):
             try:
                 async with http_method(yarl.URL(url, encoded=True), params=params, headers=headers, data=data) as response:
                     if return_response:
@@ -50,11 +59,14 @@ async def request(http_method: HTTPMethod, url: str, params: dict = None, header
                     if response.content_type == 'application/json':
                         return await response.json()
                     elif 'text' in response.content_type:
-                        return html.unescape((await response.read()).decode('unicode_escape'))
+                        if clean_text:
+                            return (await response.read()).decode('unicode_escape').encode(errors='xmlcharrefreplace').decode().replace('\\', '')
+                        else:
+                            return await response.text()
                     else:
                         return await response.read()
             except aiohttp.client_exceptions.ServerDisconnectedError:
-                if intent == intents - 1:
+                if not attempt:
                     raise
                 await asyncio.sleep(1)
     finally:
