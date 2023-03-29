@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import html
 import random
 
 import aiohttp
@@ -60,7 +61,7 @@ async def request(
                         return await response.json()
                     elif 'text' in response.content_type:
                         if clean_text:
-                            return (await response.read()).decode('unicode_escape').encode(errors='xmlcharrefreplace').decode().replace('\\', '')
+                            return html.unescape((await response.read()).decode('unicode_escape').encode(errors='xmlcharrefreplace').decode().replace('\\', ''))
                         else:
                             return await response.text()
                     else:
