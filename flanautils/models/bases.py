@@ -436,10 +436,7 @@ class MongoBase(DictBase, BytesBase):
         if sort_keys:
             cursor.sort(sort_keys)
 
-        if lazy:
-            return find_generator()
-        else:
-            return [cls.from_dict(document) for document in cursor]
+        return find_generator() if lazy else list(find_generator())
 
     def find_in_database_by_id(self, object_id: ObjectId) -> dict | None:
         """Find an object in all database collections by its ObjectId."""
