@@ -1,6 +1,6 @@
 def sign(number: int | float) -> int:
     """
-    Return the number sign.
+    Returns the number sign.
 
     >>> sign(5)
     1

@@ -90,7 +90,7 @@ def find(elements: Iterable, target: Any = None, condition: Callable[..., bool] 
 
     If condition is not None, return the first element that matches it.
 
-    Return None if nothing matches.
+    Returns None if nothing matches.
 
     >>> elements = [1, 2, '3', 4, 'hola', '6.6']
 
@@ -165,7 +165,7 @@ def frange(stop: float = 0, include_last=False) -> Iterator[float]:
 
 def frange(start: float = None, stop: float = None, step: float = 1, include_last=False) -> Iterator[float]:
     """
-    Return a Generator that works like range but with floats.
+    Returns a Generator that works like range but with floats.
 
     Can generate infinite numerical series.
 
