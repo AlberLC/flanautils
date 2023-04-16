@@ -106,7 +106,7 @@ async def poll_process(process_: multiprocessing.Process, sleep_seconds=1):
     """
     Starts the process and wait until the process is done.
 
-    Check every sleep_seconds (1 by default) if the process has finished.
+    Checks every sleep_seconds (1 by default) if the process has finished.
     """
 
     process_.start()

@@ -82,7 +82,11 @@ def do_before(before_function: Callable) -> Callable:
 
 @shift_args_if_called
 def repeat(func_: Callable = None, /, times=2) -> Callable:
-    """Decorator that makes the decorated function be executed the specified number of times (by default times=2)."""
+    """
+    Decorator that makes the decorated function be executed the specified number of times (by default times=2).
+
+    Returns the last result.
+    """
 
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
