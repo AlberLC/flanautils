@@ -36,50 +36,6 @@ def shift_args_if_called(func_: Callable = None, *, exclude_self_types: str | Ty
 # ---------------------------------------------------- #
 # -------------------- DECORATORS -------------------- #
 # ---------------------------------------------------- #
-def do_after(after_function: Callable) -> Callable:
-    """Decorator to execute a function or coroutine function after the decorated function."""
-
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            if asyncio.iscoroutinefunction(after_function):
-                async def temp():
-                    result_ = await func(*args, **kwargs)
-                    await after_function(*args, **kwargs)
-                    return result_
-
-                return temp()
-
-            result = func(*args, **kwargs)
-            after_function(*args, **kwargs)
-            return result
-
-        return wrapper
-
-    return decorator
-
-
-def do_before(before_function: Callable) -> Callable:
-    """Decorator to execute a function or coroutine function before the decorated function."""
-
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            if asyncio.iscoroutinefunction(before_function):
-                async def temp():
-                    await before_function(*args, **kwargs)
-                    return await func(*args, **kwargs)
-
-                return temp()
-
-            before_function(*args, **kwargs)
-            return func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
 @shift_args_if_called
 def repeat(func_: Callable = None, /, times=2) -> Callable:
     """
