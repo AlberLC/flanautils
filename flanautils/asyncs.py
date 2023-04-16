@@ -102,15 +102,15 @@ async def do_later(
     return asyncio.create_task(do_later_())
 
 
-async def poll_process(process_: multiprocessing.Process, sleep_seconds=1):
+async def poll_process(process: multiprocessing.Process, sleep_seconds=1):
     """
     Starts the process and wait until the process is done.
 
     Checks every sleep_seconds (1 by default) if the process has finished.
     """
 
-    process_.start()
-    while process_.is_alive():
+    process.start()
+    while process.is_alive():
         await asyncio.sleep(sleep_seconds)
 
 
@@ -137,7 +137,7 @@ async def run_process_async(func: Callable, *args, timeout: int | float = None, 
         pass
 
 
-async def wait_for_process(process_: multiprocessing.Process, timeout: int | float = None):
+async def wait_for_process(process: multiprocessing.Process, timeout: int | float = None):
     """
     Wrapper function that starts the process and wait until the process is done.
 
@@ -145,7 +145,7 @@ async def wait_for_process(process_: multiprocessing.Process, timeout: int | flo
     """
 
     try:
-        await asyncio.wait_for(poll_process(process_), timeout)
+        await asyncio.wait_for(poll_process(process), timeout)
     except asyncio.TimeoutError:
-        process_.terminate()
+        process.terminate()
         raise
