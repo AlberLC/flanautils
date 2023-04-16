@@ -33,7 +33,7 @@ def _process_function(
         queue__.put(func(*args, **kwargs))
 
 
-async def do_every(
+def do_every(
     seconds: int | float | datetime.timedelta,
     func: Callable,
     *args,
@@ -77,7 +77,7 @@ async def do_every(
     return asyncio.create_task(do_every_(times))
 
 
-async def do_later(
+def do_later(
     seconds: int | float | datetime.timedelta,
     func: Callable,
     *args,
