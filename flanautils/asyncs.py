@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import inspect
 import multiprocessing
 import queue
 from asyncio import Task
@@ -14,7 +15,7 @@ async def _do(
     **kwargs
 ) -> Any:
     try:
-        return await result if asyncio.iscoroutine(result := func(*args, **kwargs)) else result
+        return await result if inspect.isawaitable(result := func(*args, **kwargs)) else result
     except (*exceptions_to_capture,) as e:
         return e
 
@@ -27,10 +28,10 @@ def _process_function(
 ):
     """Utility function for multiprocessing purposes."""
 
-    if asyncio.iscoroutinefunction(func):
-        queue__.put(asyncio.run(func(*args, **kwargs)))
+    if inspect.isawaitable(result := func(*args, **kwargs)):
+        queue__.put(asyncio.run(result))
     else:
-        queue__.put(func(*args, **kwargs))
+        queue__.put(result)
 
 
 def do_every(
