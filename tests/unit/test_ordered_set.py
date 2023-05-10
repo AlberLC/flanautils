@@ -1,19 +1,20 @@
 import itertools
 import random
 import unittest
+from collections.abc import Callable
 from typing import Iterable
 
 import iterables
 import strings
 import test_utils
 from data_structures.ordered_set import OrderedSet
-from decorators import repeat
+from functions import repeat
 
 REPEAT_TIMES = 500
 
 
 class TestOrderedSet(unittest.TestCase):
-    def _index_access_exceptions(self, ordered_set, func):
+    def _index_access_exceptions(self, ordered_set: OrderedSet, func: Callable):
         self.assertRaises(TypeError, func, strings.random_string(0, 5))
         self.assertRaises(TypeError, func, [random.randint(-50, 50) for _ in range(random.randint(-5, 5))])
         self.assertRaises(TypeError, func, tuple(random.randint(-50, 50) for _ in
@@ -26,7 +27,7 @@ class TestOrderedSet(unittest.TestCase):
         self.assertRaises(IndexError, func, random.randint(len(ordered_set), len(ordered_set) + 50))
 
     @staticmethod
-    def _random_start_stop_step(flatten_elements):
+    def _random_start_stop_step(flatten_elements: list):
         start = random.randint(-len(flatten_elements) - 50, len(flatten_elements) + 50) if random.random() <= 0.8 else None
         stop = random.randint(-len(flatten_elements) - 50, len(flatten_elements) + 50) if random.random() <= 0.8 else None
         while (

@@ -16,7 +16,7 @@ def shift_args_if_called(func_: Callable = None, *, exclude_self_types: str | Ty
     if func_ is not None and not inspect.isfunction(func_) and not inspect.ismethod(func_):
         func_, exclude_self_types, globals_ = iterables.shift_function_args(func_, exclude_self_types, globals_, func=shift_args_if_called)
 
-    def decorator(func):
+    def decorator(func: Callable):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             self, args = iterables.separate_self_from_args(args, exclude_self_types, globals_)
@@ -95,7 +95,7 @@ def return_if_first_empty(func_: Callable = None, /, return_: Any = None, exclud
 def time_it(func_: Callable = None, /, n_executions=1) -> Callable:
     """Decorator that prints the seconds it takes for the function to run."""
 
-    def decorator(func):
+    def decorator(func: Callable):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             new_template = f"""def inner(_it, _timer{{init}}):
