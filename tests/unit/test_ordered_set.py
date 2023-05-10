@@ -31,7 +31,7 @@ class TestOrderedSet(unittest.TestCase):
         start = random.randint(-len(flatten_elements) - 50, len(flatten_elements) + 50) if random.random() <= 0.8 else None
         stop = random.randint(-len(flatten_elements) - 50, len(flatten_elements) + 50) if random.random() <= 0.8 else None
         while (
-                step := random.randint(-len(flatten_elements) - 50, len(flatten_elements) + 50) if random.random() <= 0.8 else None
+            step := random.randint(-len(flatten_elements) - 50, len(flatten_elements) + 50) if random.random() <= 0.8 else None
         ) == 0:
             pass
 
@@ -165,7 +165,8 @@ class TestOrderedSet(unittest.TestCase):
     @repeat(REPEAT_TIMES)
     def test__getitem__(self):
         while not (
-                elements := [element for element in test_utils.random_collections(random.randint(2, 15)) if element]):
+            elements := [element for element in test_utils.random_collections(random.randint(2, 15)) if element]
+        ):
             pass
 
         s1 = OrderedSet(*elements)
@@ -363,7 +364,8 @@ class TestOrderedSet(unittest.TestCase):
     @repeat(REPEAT_TIMES)
     def test_index(self):
         while not (
-                elements := [element for element in test_utils.random_collections(random.randint(2, 15)) if element]):
+            elements := [element for element in test_utils.random_collections(random.randint(2, 15)) if element]
+        ):
             pass
         expected_list = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
         s1 = OrderedSet(*elements)

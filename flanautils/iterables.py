@@ -137,11 +137,11 @@ def flatten(*args: Iterable, depth=None, lazy=False) -> Iterator | list:
 
         for arg_ in args_:
             if (
-                    isinstance(arg_, Iterable)
-                    and
-                    not isinstance(arg_, (str, bytes))
-                    and
-                    (depth_ is None or current_depth < depth_)
+                isinstance(arg_, Iterable)
+                and
+                not isinstance(arg_, (str, bytes))
+                and
+                (depth_ is None or current_depth < depth_)
             ):
                 yield from flatten_generator(*arg_, depth_=depth_)
                 if depth_ is not None:
