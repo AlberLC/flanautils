@@ -183,6 +183,9 @@ def frange(start: float = None, stop: float = None, step: float = 1, include_las
     [3.0, 3.2, 3.4000000000000004, 3.6000000000000005, 3.8000000000000007, 4.000000000000001, 4.200000000000001, 4.400000000000001, 4.600000000000001, 4.800000000000002]
     """
 
+    if step == 0:
+        raise ValueError('step must not be zero')
+
     match start, stop:
         case [(int() | float()) as stop, None]:
             start = 0
@@ -254,12 +257,7 @@ def shift_function_args(*args, func: Callable = None, first_arg_default: Any = N
     argument.
     """
 
-    match func, first_arg_default:
-        case func, _ if isinstance(func, Callable):
-            first_arg_default = next(iter(inspect.signature(func).parameters.values())).default
-        case _, first_arg_default:
-            pass
-        case _:
-            raise TypeError('bad arguments')
+    if isinstance(func, Callable):
+        first_arg_default = next(iter(inspect.signature(func).parameters.values())).default
 
     return None if first_arg_default is inspect.Parameter.empty else first_arg_default, *args
