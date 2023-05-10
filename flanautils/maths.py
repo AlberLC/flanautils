@@ -1,4 +1,4 @@
-def sign(number: int | float) -> int:
+def sign(number: int | float, zero_sign=1) -> int:
     """
     Returns the number sign.
 
@@ -7,6 +7,8 @@ def sign(number: int | float) -> int:
     >>> sign(-5.2)
     -1
     >>> sign(0)
+    1
+    >>> sign(0, zero_sign=0)
     0
     """
 
@@ -14,4 +16,4 @@ def sign(number: int | float) -> int:
         return 1
     elif number < 0:
         return -1
-    return 0
+    return zero_sign
