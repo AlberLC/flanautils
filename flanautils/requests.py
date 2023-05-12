@@ -5,11 +5,34 @@ import random
 
 import aiohttp
 import aiohttp.client_exceptions
+import browser_cookie3
 import yarl
 
 from flanautils import constants
 from flanautils.exceptions import ResponseError
 from flanautils.models.enums import HTTPMethod
+
+
+def browser_cookies(domain: str, ignore_expired=True) -> list[dict]:
+    cookies = []
+
+    for cookie in browser_cookie3.chrome(domain_name=domain):
+        cookie_vars = vars(cookie)
+        if ignore_expired and 'expires' in cookie_vars and not cookie_vars['expires']:
+            continue
+
+        cookie_dict = {}
+        for k, v in cookie_vars.items():
+            if k.startswith('_'):
+                cookie_dict |= v
+                continue
+
+            if k == 'secure':
+                v = bool(v)
+            cookie_dict[k] = v
+        cookies.append(cookie_dict)
+
+    return cookies
 
 
 async def request(
