@@ -395,6 +395,13 @@ class MongoBase(DictBase, BytesBase):
         self.collection.delete_one({'_id': self._id})
 
     @classmethod
+    def delete_many_raw(cls, *args, **kwargs) -> pymongo.results.DeleteResult | None:
+        if cls.collection is None:
+            return
+
+        return cls.collection.delete_many(*args, **kwargs)
+
+    @classmethod
     def delete_many_raw(cls, *args, **kwargs):
         if cls.collection is None:
             return
