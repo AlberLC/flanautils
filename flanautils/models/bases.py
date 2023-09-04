@@ -13,8 +13,9 @@ from enum import Enum
 from types import NoneType
 from typing import AbstractSet, Any, Iterable, Iterator, Sequence
 
-import pymongo.collection
+import pymongo
 import pymongo.database
+import pymongo.results
 from bson import ObjectId
 
 from flanautils import iterables
@@ -402,11 +403,11 @@ class MongoBase(DictBase, BytesBase):
         return cls.collection.delete_many(*args, **kwargs)
 
     @classmethod
-    def delete_many_raw(cls, *args, **kwargs):
+    def delete_one_raw(cls, *args, **kwargs) -> pymongo.results.DeleteResult | None:
         if cls.collection is None:
             return
 
-        cls.collection.delete_many(*args, **kwargs)
+        return cls.collection.delete_one(*args, **kwargs)
 
     @classmethod
     def find(
@@ -461,14 +462,14 @@ class MongoBase(DictBase, BytesBase):
         return next(cls.find(query, sort_keys, lazy=True), None)
 
     @classmethod
-    def find_one_raw(cls, *args, **kwargs):
+    def find_one_raw(cls, *args, **kwargs) -> dict | None:
         if cls.collection is None:
             return
 
         return cls.collection.find_one(*args, **kwargs)
 
     @classmethod
-    def find_raw(cls, *args, **kwargs):
+    def find_raw(cls, *args, **kwargs) -> pymongo.cursor.Cursor[dict] | None:
         if cls.collection is None:
             return
 
@@ -548,15 +549,15 @@ class MongoBase(DictBase, BytesBase):
             for database_key, database_value in vars(self.from_dict(document, lazy)).items():
                 self_value = getattr(self, database_key)
                 if (
-                        database_key not in exclude_fields
-                        and
-                        (
-                                database_key in overwrite_fields and database_value is not None
-                                or
-                                self_value is None
-                                or
-                                isinstance(self_value, Iterable) and not self_value
-                        )
+                    database_key not in exclude_fields
+                    and
+                    (
+                        database_key in overwrite_fields and database_value is not None
+                        or
+                        self_value is None
+                        or
+                        isinstance(self_value, Iterable) and not self_value
+                    )
                 ):
                     super().__setattr__(database_key, database_value)
 
