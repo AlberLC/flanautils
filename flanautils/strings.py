@@ -31,6 +31,9 @@ def cast_number(text: str, raise_exception=True) -> int | float | str:
     If raise_exception=False (True by default), returns the input as it is.
     """
 
+    if isinstance(text, int | float):
+        return text
+
     try:
         return int(text)
     except ValueError:
