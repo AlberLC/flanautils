@@ -15,7 +15,7 @@ def chunks(elements: Sequence, size, lazy=False) -> Iterator[Sequence] | list[Se
         return list(generator_)
 
 
-# noinspection PyShadowingNames,PyShadowingBuiltins
+# noinspection PyShadowingNames, PyShadowingBuiltins
 def filter(
     elements: Iterable,
     target: Any = None,
