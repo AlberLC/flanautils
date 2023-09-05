@@ -28,25 +28,27 @@ def filter(
 
     If condition is not None, return the all elements that matches it.
 
-    >>> elements = [1, 2, '3', 4, 'hola', '6.6']
+    >>> elements = [1, 2.2, '3', 4, 'hola', '6.6']
 
-    >>> filter(elements, 2)
-    [2]
+    >>> filter(elements, 1)
+    [1]
     >>> filter(elements, int)
-    [1, 2, 4]
+    [1, 4]
     >>> filter(elements, float)
-    []
+    [2.2]
     >>> filter(elements, 6.6, cast_numbers=True)
     [6.6]
-    >>> import numbers # Python Standard Library
-    >>> filter(elements, numbers.Real, cast_numbers=True)
-    [1, 2, 3, 4, 6.6]
-    >>> filter(elements, condition=lambda e: isinstance(e, int | float), cast_numbers=True)
-    [1, 2, 3, 4, 6.6]
-    >>> type(filter(elements, numbers.Real, cast_numbers=True, lazy=True))
+    >>> filter(elements, int | float, cast_numbers=True)
+    [1, 2.2, 3, 4, 6.6]
+    >>> import numbers  # Python Standard Library
+    >>> filter(elements, numbers.Number, cast_numbers=True)
+    [1, 2.2, 3, 4, 6.6]
+    >>> filter(elements, condition=lambda e: isinstance(e, int | float) and e > 3, cast_numbers=True)
+    [4, 6.6]
+    >>> type(filter(elements, int | float, cast_numbers=True, lazy=True))
     <class 'generator'>
-    >>> list(filter(elements, numbers.Real, cast_numbers=True, lazy=True))
-    [1, 2, 3, 4, 6.6]
+    >>> list(filter(elements, int | float, cast_numbers=True, lazy=True))
+    [1, 2.2, 3, 4, 6.6]
     """
 
     if condition is None:
