@@ -25,26 +25,41 @@ def cartesian_product_string_matching(a_text: str | Iterable[str], b_text: str |
     return {a_word: matches for a_word in a_words if (matches := {b_word: score for b_word in b_words if (score := jellyfish.jaro_winkler_similarity(a_word, b_word)) >= min_score})}
 
 
-def cast_number(text: str, raise_exception=True) -> numbers_module.Number | str:
-    """
-    Try to cast a string to a number.
+@overload
+def cast_number(x: numbers_module.Number, raise_exception=True) -> numbers_module.Number:
+    pass
 
-    If raise_exception=False (True by default), returns the input as it is.
+
+@overload
+def cast_number(x: str, raise_exception=True) -> numbers_module.Number | str:
+    pass
+
+
+@overload
+def cast_number(x: bytes, raise_exception=True) -> numbers_module.Number | bytes:
+    pass
+
+
+def cast_number(x: numbers_module.Number | str | bytes, raise_exception=True) -> numbers_module.Number | str | bytes:
+    """
+    Try to cast x to a number.
+
+    If raise_exception=False (True by default) and the casting fails, returns the input as it is.
     """
 
-    if isinstance(text, numbers_module.Number):
-        return text
+    if isinstance(x, numbers_module.Number):
+        return x
 
     try:
-        return int(text)
+        return int(x)
     except ValueError:
         try:
-            return float(text)
+            return float(x)
         except ValueError:
             if raise_exception:
                 raise
             else:
-                return text
+                return x
 
 
 def find_coordinates(text: str) -> tuple[float, float] | list[tuple[float, float]] | None:
