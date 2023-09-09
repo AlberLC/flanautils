@@ -1,5 +1,6 @@
 import datetime
 import json
+import numbers as numbers_module
 import pathlib
 import random
 import re
@@ -24,14 +25,14 @@ def cartesian_product_string_matching(a_text: str | Iterable[str], b_text: str |
     return {a_word: matches for a_word in a_words if (matches := {b_word: score for b_word in b_words if (score := jellyfish.jaro_winkler_similarity(a_word, b_word)) >= min_score})}
 
 
-def cast_number(text: str, raise_exception=True) -> int | float | str:
+def cast_number(text: str, raise_exception=True) -> numbers_module.Number | str:
     """
     Try to cast a string to a number.
 
     If raise_exception=False (True by default), returns the input as it is.
     """
 
-    if isinstance(text, int | float):
+    if isinstance(text, numbers_module.Number):
         return text
 
     try:
