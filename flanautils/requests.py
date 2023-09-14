@@ -14,6 +14,8 @@ from flanautils.models.enums import HTTPMethod
 
 
 def browser_cookies(domain: str, ignore_expired=True) -> list[dict]:
+    """Obtains chrome cookies according to domain parameter."""
+
     cookies = []
 
     for cookie in browser_cookie3.chrome(domain_name=domain):
@@ -103,6 +105,8 @@ post_request = functools.partial(request, HTTPMethod.POST)
 
 
 async def resolve_real_url(url: str, headers=None) -> str:
+    """Gets the final url after the redirects."""
+
     if headers is None:
         headers = {'User-Agent': random.choice(constants.GOOGLE_BOT_USER_AGENTS)}
     return str((await get_request(url, headers=headers, return_response=True)).url)

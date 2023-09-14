@@ -14,6 +14,8 @@ async def _do(
     exceptions_to_capture: Type[Exception] | Iterable[Type[Exception]] = (),
     **kwargs
 ) -> Any:
+    """Execute the function whether it is asynchronous or not."""
+
     try:
         return await result if inspect.isawaitable(result := func(*args, **kwargs)) else result
     except (*exceptions_to_capture,) as e:

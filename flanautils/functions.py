@@ -8,6 +8,8 @@ from flanautils import iterables
 
 
 def is_function(func: Any) -> bool:
+    """Checks if the func object is considered a function."""
+
     if isinstance(func, functools.partial):
         func = func.func
 
