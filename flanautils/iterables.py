@@ -111,7 +111,7 @@ def find(elements: Iterable, target: Any = None, condition: Callable[..., bool] 
     return next(filter(elements, target, condition, cast_numbers, lazy=True), None)
 
 
-def flatten(*args: Iterable, depth=None, lazy=False) -> Iterator | list:
+def flatten(*args: Iterable, depth: int = None, lazy=False) -> Iterator | list:
     """
     Iterates and flattens iterables recursively according to the specified depth.
 
