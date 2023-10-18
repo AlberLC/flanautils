@@ -279,7 +279,7 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
 
     @classmethod
     def ordered_set_if_not_set(cls: Type[T], arg: Any) -> AbstractSet | T:
-        return arg if isinstance(arg, AbstractSet) else cls(iterables.flatten(arg, lazy=True))
+        return arg if isinstance(arg, AbstractSet) else cls(iterables.flatten(arg, depth=2, lazy=True))
 
     def pop(self, index=-1) -> E:
         element = self[index]
