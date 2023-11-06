@@ -117,7 +117,7 @@ async def poll_process(process: multiprocessing.Process, sleep_seconds=1):
         await asyncio.sleep(sleep_seconds)
 
 
-async def run_process_async(func: Callable, *args, timeout: int | float = None, **kwargs) -> Any:
+async def run_process(func: Callable, *args, timeout: int | float = None, **kwargs) -> Any:
     """
     Executes the function with the provided arguments in another process in parallel, waits asynchronously for its
     completion, and returns the result.
