@@ -3,6 +3,7 @@ from flanautils.asyncs import *
 from flanautils.data_structures import *
 from flanautils.exceptions import *
 from flanautils.functions import *
+from flanautils.images import *
 from flanautils.iterables import *
 from flanautils.maths import *
 from flanautils.medias import *
