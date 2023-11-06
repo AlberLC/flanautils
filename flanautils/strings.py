@@ -122,13 +122,13 @@ def find_environment_variables(text: str | pathlib.Path) -> dict:
 def find_urls(text: str) -> list[str]:
     """Returns the substrings that match the url pattern."""
 
-    return re.findall('(?:http|www\.)[-a-zA-Z0-9()@:%_+.~#?&/=]+', text)
+    return re.findall(r'(?:http|www\.)[-a-zA-Z0-9()@:%_+.~#?&/=]+', text)
 
 
 def find_url_domains(text: str) -> list[str]:
     """Returns the substrings that match the url domain pattern."""
 
-    return re.findall('(?:http.+?/|www\.|@)([\w.]+)(?!.*@)', text)
+    return re.findall(r'(?:http.+?/|www\.|@)([\w.]+)(?!.*@)', text)
 
 
 def join_last_separator(elements: Iterable, separator: str, last_separator: str, final_char='') -> str:
