@@ -4,8 +4,10 @@ from enum import Enum, auto
 
 import cv2
 import mss
+import mss.base
 import mss.screenshot
 import numpy
+import numpy.core.records
 
 
 class SortBy(Enum):
@@ -129,7 +131,7 @@ def get_screenshot(
     region: Sequence[int, int, int, int] = None,
     capturer: mss.base.MSSBase = None
 ) -> tuple[numpy.ndarray, tuple[int, int]]:
-    def get_mss_region(region_: Sequence[int, int, int, int] = None) -> dict[str, int]:
+    def get_mss_region(capturer_: mss.base.MSSBase, region_: Sequence[int, int, int, int] = None) -> dict[str, int]:
         if region_:
             return {
                 "left": region_[0],
@@ -138,17 +140,22 @@ def get_screenshot(
                 "height": region_[3] - region_[1],
             }
         else:
-            return capturer.monitors[0]
+            return capturer_.monitors[0]
+
+    def grab(
+        capturer_: mss.base.MSSBase,
+        region_: Sequence[int, int, int, int]
+    ) -> tuple[mss.screenshot.ScreenShot, dict[str, int]]:
+        mss_region_ = get_mss_region(capturer_, region_)
+        return capturer_.grab(mss_region_), mss_region_
 
     if capturer:
-        region = get_mss_region(region)
-        screenshot = capturer.grab(region)
+        screenshot, mss_region = grab(capturer, region)
     else:
         with mss.mss() as capturer:
-            region = get_mss_region(region)
-            screenshot = capturer.grab(region)
+            screenshot, mss_region = grab(capturer, region)
 
-    return to_ndarray(screenshot), (region['left'], region['top'])
+    return to_ndarray(screenshot), (mss_region['left'], mss_region['top'])
 
 
 def is_region_color(
