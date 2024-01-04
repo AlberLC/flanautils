@@ -60,6 +60,9 @@ def next_path(path_template: str | pathlib.Path, start=1, exhaustive=True) -> st
     >>> pathlib.Path('file_4.txt').unlink()
     """
 
+    if '{}' not in path_template:
+        raise ValueError('path_template has to follow the syntax of str.format()')
+
     b = start
 
     if exhaustive:
