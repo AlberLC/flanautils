@@ -39,9 +39,15 @@ def next_path(path_template: str, start=2, exhaustive=True) -> pathlib.Path:
     >>> pathlib.Path('file_2.txt').touch()
     >>> pathlib.Path('file_4.txt').touch()
 
-    >>> next_path('file_{}.txt')
+    >>> path = next_path('file_{}.txt')
+    >>> isinstance(path, pathlib.Path)
+    True
+    >>> str(path)
     'file_3.txt'
-    >>> next_path('file_{}.txt', exhaustive=False)
+    >>> path = next_path('file_{}.txt', exhaustive=False)
+    >>> isinstance(path, pathlib.Path)
+    True
+    >>> str(path)
     'file_5.txt'
 
     >>> pathlib.Path('file_1.txt').unlink()
