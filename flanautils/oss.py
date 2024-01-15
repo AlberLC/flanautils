@@ -6,7 +6,6 @@ import subprocess
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import overload
 
 from flanautils import strings
 
@@ -26,17 +25,7 @@ def find_paths_by_stem(
     return generator_ if lazy else list(generator_)
 
 
-@overload
-def next_path(path_template: str, start=1, exhaustive=True) -> str:
-    pass
-
-
-@overload
-def next_path(path_template: pathlib.Path, start=1, exhaustive=True) -> pathlib.Path:
-    pass
-
-
-def next_path(path_template: str | pathlib.Path, start=1, exhaustive=True) -> str | pathlib.Path:
+def next_path(path_template: str, start=2, exhaustive=True) -> pathlib.Path:
     """
     Finds the next free path in a sequentially named files.
 
@@ -76,7 +65,7 @@ def next_path(path_template: str | pathlib.Path, start=1, exhaustive=True) -> st
             c = (a + b) // 2
             a, b = (c, b) if pathlib.Path(path_template.format(c)).exists() else (a, c)
 
-    return path_template.format(b)
+    return pathlib.Path(path_template.format(b))
 
 
 def resolve_path(path: str) -> pathlib.Path:
