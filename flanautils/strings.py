@@ -101,7 +101,10 @@ def find_coordinates(text: str) -> tuple[float, float] | list[tuple[float, float
 def find_jsons(text: str | pathlib.Path) -> list[dict]:
     """Find all well formatted JSONs in a string or in a pathlib.Path and return them in dictionaries."""
 
-    text = read_file(text) or text
+    try:
+        text = pathlib.Path(text).read_text('utf-8')
+    except OSError:
+        pass
 
     jsons = []
     position = 0
@@ -114,7 +117,10 @@ def find_jsons(text: str | pathlib.Path) -> list[dict]:
 def find_environment_variables(text: str | pathlib.Path) -> dict:
     """Looks for environment variables in a string or in a pathlib.Path in .env format (key=value)."""
 
-    text = read_file(text) or text
+    try:
+        text = pathlib.Path(text).read_text('utf-8')
+    except OSError:
+        pass
     # noinspection PyTypeChecker
     return dict(line.split('=', maxsplit=1) for original_line in text.splitlines() if '=' in (line := original_line.strip()) and not line.startswith('#'))
 
@@ -234,20 +240,6 @@ def random_string(min_len=10, max_len=None, letters=True, numbers=True, n_spaces
         min_len = random.randint(min_len, max_len)
 
     return ''.join(secrets.choice(characters) for _ in range(min_len))
-
-
-def read_file(path: str | pathlib.Path) -> str | None:
-    """
-    Returns the content of the file as text.
-
-    Returns None if path is not a valid path string or pathlib.Path.
-    """
-
-    match path:
-        case str() | pathlib.Path() as path:
-            if pathlib.Path(path).is_file():
-                with open(path) as file:
-                    return file.read()
 
 
 def remove_accents(text: str, ignore: Iterable = ('ñ', 'ç')) -> str:
