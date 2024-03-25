@@ -61,7 +61,7 @@ class TestOrderedSet(unittest.TestCase):
         self.assertRaises(TypeError, OrderedSet, 5, ({6},))
 
     @repeat(REPEAT_TIMES)
-    def test__add__and__iadd__(self):
+    def test__add__and__iadd__and__radd__(self):
         elements_s1 = test_utils.random_collections(random.randint(0, 5))
         elements_s2 = test_utils.random_collections(random.randint(0, 5))
         s1 = OrderedSet(*elements_s1)
@@ -71,12 +71,14 @@ class TestOrderedSet(unittest.TestCase):
 
         with self.subTest('__add__'):
             self.assertEqual(expected_elements, list(s1 + s2))
-        with self.subTest('__aidd__'):
+        with self.subTest('__iadd__'):
             s1 += s2
             self.assertEqual(expected_elements, list(s1))
+        with self.subTest('__radd__'):
+            self.assertEqual(expected_elements, list(elements_s1 + s2))
 
     @repeat(REPEAT_TIMES)
-    def test__and__and__iand__and_intersection_and_intersection_update(self):
+    def test__and__and__iand__and__rand__and_intersection_and_intersection_update(self):
         elements_s1 = test_utils.random_collections(random.randint(0, 5))
         elements_s2 = test_utils.random_collections(random.randint(0, 5))
         s1 = OrderedSet(*elements_s1)
@@ -94,6 +96,8 @@ class TestOrderedSet(unittest.TestCase):
             s1b = s1.copy()
             s1b &= s2
             self.assertEqual(expected_elements, list(s1b))
+        with self.subTest('__rand__'):
+            self.assertEqual(expected_elements, list(elements_s1 & s2))
         with self.subTest('intersection'):
             self.assertEqual(expected_elements, list(s1.intersection(s2)))
         with self.subTest('intersection_update'):
@@ -114,24 +118,24 @@ class TestOrderedSet(unittest.TestCase):
             pass
 
         s1 = OrderedSet(*elements)
-        expected_list = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
+        expected_elements = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
 
-        start, stop, step = self._random_start_stop_step(expected_list)
+        start, stop, step = self._random_start_stop_step(expected_elements)
 
-        expected_list_copy = expected_list.copy()
+        expected_elements_copy = expected_elements.copy()
         s1_copy = s1.copy()
-        del expected_list_copy[start:stop:step]
+        del expected_elements_copy[start:stop:step]
         del s1_copy[start:stop:step]
-        self.assertEqual(expected_list_copy, list(s1_copy))
-        for i in range(-len(expected_list), len(expected_list)):
+        self.assertEqual(expected_elements_copy, list(s1_copy))
+        for i in range(-len(expected_elements), len(expected_elements)):
             with self.subTest(i=i):
-                expected_list_copy = expected_list.copy()
+                expected_elements_copy = expected_elements.copy()
                 s1_copy = s1.copy()
-                del expected_list_copy[i]
+                del expected_elements_copy[i]
                 del s1_copy[i]
-                self.assertEqual(expected_list_copy, list(s1_copy))
+                self.assertEqual(expected_elements_copy, list(s1_copy))
 
-        self._index_access_exceptions(s1, s1.__getitem__)
+        self._index_access_exceptions(s1, s1.__delitem__)
 
     @repeat(REPEAT_TIMES)
     def test__eq__(self):
@@ -185,11 +189,11 @@ class TestOrderedSet(unittest.TestCase):
     def test__iter__(self):
         elements = test_utils.random_collections(random.randint(0, 15))
         s1 = OrderedSet(*elements)
-        expected_list = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
+        expected_elements = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
 
         self.assertIsInstance(s1, Iterable)
-        self.assertEqual(expected_list, list(s1))
-        for expected_element, actual_element in itertools.zip_longest(expected_list, s1):
+        self.assertEqual(expected_elements, list(s1))
+        for expected_element, actual_element in itertools.zip_longest(expected_elements, s1):
             self.assertEqual(expected_element, actual_element)
 
     @repeat(REPEAT_TIMES)
@@ -199,19 +203,21 @@ class TestOrderedSet(unittest.TestCase):
         self.assertEqual(len(list(test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True)))), len(OrderedSet(*elements)))
 
     @repeat(REPEAT_TIMES)
-    def test__or__and__ior__(self):
+    def test__or__and__ior__and__ror__(self):
         elements_s1 = test_utils.random_collections(random.randint(0, 5))
         elements_s2 = test_utils.random_collections(random.randint(0, 5))
         s1 = OrderedSet(*elements_s1)
         s2 = OrderedSet(*elements_s2)
 
-        expected_list = test_utils.list_without_repetitions(iterables.flatten(*elements_s1 + elements_s2, lazy=True))
+        expected_elements = test_utils.list_without_repetitions(iterables.flatten(*elements_s1 + elements_s2, lazy=True))
 
         with self.subTest('__or__'):
-            self.assertEqual(expected_list, list(s1 | s2))
+            self.assertEqual(expected_elements, list(s1 | s2))
         with self.subTest('__ior__'):
             s1 |= s2
-            self.assertEqual(expected_list, list(s1))
+            self.assertEqual(expected_elements, list(s1))
+        with self.subTest('__ror__'):
+            self.assertEqual(expected_elements, list(elements_s1 | s2))
 
     def test__repr__(self):
         s1 = OrderedSet(*test_utils.random_collections(random.randint(0, 5)))
@@ -231,7 +237,7 @@ class TestOrderedSet(unittest.TestCase):
         self.assertNotEqual("#{1, 'a', ('bb', 25.4)}", str(OrderedSet(1, 'a', [(25.4, 'bb')])))
 
     @repeat(REPEAT_TIMES)
-    def test__sub__and__isub__and_difference_and_difference_update(self):
+    def test__sub__and__isub__and__rsub__and_difference_and_difference_update(self):
         elements_s1 = test_utils.random_collections(random.randint(0, 5))
         elements_s2 = test_utils.random_collections(random.randint(0, 5))
         s1 = OrderedSet(*elements_s1)
@@ -239,32 +245,35 @@ class TestOrderedSet(unittest.TestCase):
 
         flatten_elements_s2 = list(iterables.flatten(*elements_s2, lazy=True))
 
-        expected_list = test_utils.list_without_repetitions(
+        expected_elements = test_utils.list_without_repetitions(
             element for element in iterables.flatten(*elements_s1, lazy=True) if element not in flatten_elements_s2
         )
 
         with self.subTest('__sub__'):
-            self.assertEqual(expected_list, list(s1 - s2))
+            self.assertEqual(expected_elements, list(s1 - s2))
         with self.subTest('__isub__'):
             s1b = s1.copy()
             s1b -= s2
-            self.assertEqual(expected_list, list(s1b))
+            self.assertEqual(expected_elements, list(s1b))
+        with self.subTest('__rsub__'):
+            self.assertEqual(expected_elements, list(elements_s1 - s2))
         with self.subTest('difference'):
-            self.assertEqual(expected_list, list(s1.difference(s2)))
+            self.assertEqual(expected_elements, list(s1.difference(s2)))
         with self.subTest('difference_update'):
             s1.difference_update(s2)
             self.assertEqual(expected_list, list(s1))
+            self.assertEqual(expected_elements, list(s1))
 
     @repeat(REPEAT_TIMES)
     def test_ordered_set_if_not_set(self):
         elements = test_utils.random_collections(random.randint(0, 5))
         flatten_elements = list(iterables.flatten(elements, lazy=True))
 
-        result = OrderedSet.ordered_set_if_not_set({*flatten_elements})
+        result = OrderedSet.ensure_set({*flatten_elements})
 
         self.assertIsInstance(result, set)
         self.assertEqual({*flatten_elements}, result)
-        result = OrderedSet.ordered_set_if_not_set(elements)
+        result = OrderedSet.ensure_set(elements)
         self.assertIsInstance(result, OrderedSet)
         self.assertEqual(OrderedSet(*elements), result)
 
@@ -272,26 +281,26 @@ class TestOrderedSet(unittest.TestCase):
     def test_ordered_set_if_not_set_fail(self):
         elements = test_utils.random_collections(random.randint(0, 5))
 
-        result = OrderedSet.ordered_set_if_not_set({iterables.flatten(elements, lazy=True)})
+        result = OrderedSet.ensure_set({iterables.flatten(elements, lazy=True)})
         self.assertNotIsInstance(result, OrderedSet)
 
     @repeat(REPEAT_TIMES)
     def test_add(self):
         elements = test_utils.random_collections(random.randint(0, 5))
-        expected_list = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
+        expected_elements = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
         new_element = test_utils.random_elements()[0]
         s1 = OrderedSet(*elements)
         s1.add(new_element)
 
-        if new_element not in expected_list:
-            expected_list.append(new_element)
+        if new_element not in expected_elements:
+            expected_elements.append(new_element)
 
-        self.assertEqual(expected_list, list(s1))
+        self.assertEqual(expected_elements, list(s1))
 
     @repeat(REPEAT_TIMES)
     def test_add_many(self):
         elements = test_utils.random_collections(random.randint(0, 5))
-        expected_list = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
+        expected_elements = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
 
         new_elements = test_utils.random_collections(random.randint(0, 5))
         flatten_new_elements = test_utils.list_without_repetitions(iterables.flatten(*new_elements, lazy=True))
@@ -300,10 +309,10 @@ class TestOrderedSet(unittest.TestCase):
         s1.add_many(flatten_new_elements)
 
         for new_element in flatten_new_elements:
-            if new_element not in expected_list:
-                expected_list.append(new_element)
+            if new_element not in expected_elements:
+                expected_elements.append(new_element)
 
-        self.assertEqual(expected_list, list(s1))
+        self.assertEqual(expected_elements, list(s1))
 
     @repeat(REPEAT_TIMES)
     def test_clear(self):
@@ -325,16 +334,16 @@ class TestOrderedSet(unittest.TestCase):
     @repeat(REPEAT_TIMES)
     def test_discard(self):
         elements = test_utils.random_collections(random.randint(0, 5))
-        expected_list = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
+        expected_elements = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
         elements_to_delete = test_utils.random_elements()[0]
         s1 = OrderedSet(*elements)
         s1.discard(elements_to_delete)
 
-        if elements_to_delete in expected_list:
-            expected_list.remove(elements_to_delete)
-            self.assertEqual(expected_list, list(s1))
+        if elements_to_delete in expected_elements:
+            expected_elements.remove(elements_to_delete)
+            self.assertEqual(expected_elements, list(s1))
         else:
-            self.assertEqual(expected_list, list(s1))
+            self.assertEqual(expected_elements, list(s1))
 
         s1.discard({})  # TypeError not raised
         s1.discard(set())  # TypeError not raised
@@ -343,7 +352,7 @@ class TestOrderedSet(unittest.TestCase):
     @repeat(REPEAT_TIMES)
     def test_discard_many(self):
         elements = test_utils.random_collections(random.randint(0, 5))
-        expected_list = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
+        expected_elements = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
 
         elements_to_delete = test_utils.random_collections(random.randint(0, 5))
         flatten_elements_to_delete = test_utils.list_without_repetitions(iterables.flatten(*elements_to_delete, lazy=True))
@@ -352,10 +361,10 @@ class TestOrderedSet(unittest.TestCase):
         s1.discard_many(flatten_elements_to_delete)
 
         for new_element in flatten_elements_to_delete:
-            if new_element in expected_list:
-                expected_list.remove(new_element)
+            if new_element in expected_elements:
+                expected_elements.remove(new_element)
 
-        self.assertEqual(expected_list, list(s1))
+        self.assertEqual(expected_elements, list(s1))
 
         s1.discard({})  # TypeError not raised
         s1.discard(set())  # TypeError not raised
@@ -367,15 +376,15 @@ class TestOrderedSet(unittest.TestCase):
             elements := [element for element in test_utils.random_collections(random.randint(2, 15)) if element]
         ):
             pass
-        expected_list = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
+        expected_elements = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
         s1 = OrderedSet(*elements)
 
-        start, stop, _ = self._random_start_stop_step(expected_list)
+        start, stop, _ = self._random_start_stop_step(expected_elements)
 
         for i in range(random.randint(1, 20)):
             with self.subTest(i=i):
                 try:
-                    element = random.choice(expected_list)
+                    element = random.choice(expected_elements)
                 except IndexError:
                     continue
 
@@ -386,14 +395,14 @@ class TestOrderedSet(unittest.TestCase):
                         if stop is not None:
                             limits.append(stop)
                     try:
-                        self.assertEqual(expected_list.index(element, *limits), s1.index(element, *limits))
+                        self.assertEqual(expected_elements.index(element, *limits), s1.index(element, *limits))
                     except ValueError:
                         self.assertRaises(ValueError, s1.index, element, *limits, raise_exception=True)
 
     @repeat(REPEAT_TIMES)
     def test_insert(self):
         elements = test_utils.random_collections(random.randint(0, 5))
-        expected_list = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
+        expected_elements = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
 
         s1 = OrderedSet(*elements)
 
@@ -403,9 +412,9 @@ class TestOrderedSet(unittest.TestCase):
                 element = test_utils.random_elements()[0]
                 if element in s1:
                     continue
-                expected_list.insert(index, element)
+                expected_elements.insert(index, element)
                 s1.insert(index, element)
-                self.assertEqual(expected_list, list(s1))
+                self.assertEqual(expected_elements, list(s1))
 
     @repeat(REPEAT_TIMES)
     def test_is_disjoint(self):
@@ -448,33 +457,33 @@ class TestOrderedSet(unittest.TestCase):
     @repeat(REPEAT_TIMES)
     def test_reverse(self):
         elements = test_utils.random_collections(random.randint(0, 5))
-        expected_list = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
+        expected_elements = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
 
         s1 = OrderedSet(*elements)
 
-        expected_list.reverse()
+        expected_elements.reverse()
         s1.reverse()
 
-        self.assertEqual(expected_list, list(s1))
+        self.assertEqual(expected_elements, list(s1))
 
     @repeat(REPEAT_TIMES)
     def test_sort(self):
         elements = test_utils.random_collections(random.randint(0, 5))
-        expected_list = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
+        expected_elements = test_utils.list_without_repetitions(iterables.flatten(*elements, lazy=True))
 
         s1 = OrderedSet(*elements)
 
         try:
-            expected_list.sort()
+            expected_elements.sort()
             s1.sort()
-            self.assertEqual(expected_list, list(s1))
+            self.assertEqual(expected_elements, list(s1))
         except TypeError:
             self.assertRaises(TypeError, s1.sort)
 
         try:
-            expected_list.sort(reverse=True)
+            expected_elements.sort(reverse=True)
             s1.sort(reverse=True)
-            self.assertEqual(expected_list, list(s1))
+            self.assertEqual(expected_elements, list(s1))
         except TypeError:
             self.assertRaises(TypeError, s1.sort, reverse=True)
 
@@ -482,38 +491,34 @@ class TestOrderedSet(unittest.TestCase):
     def test_symmetric_difference_difference_update(self):
         elements_s1 = test_utils.random_collections(random.randint(0, 5))
         elements_s2 = test_utils.random_collections(random.randint(0, 5))
-
-        flatten_elements_s1 = test_utils.list_without_repetitions(iterables.flatten(*elements_s1, lazy=True))
-        flatten_elements_s2 = test_utils.list_without_repetitions(iterables.flatten(*elements_s2, lazy=True))
-
         s1 = OrderedSet(*elements_s1)
         s2 = OrderedSet(*elements_s2)
 
+        flatten_elements_s1 = test_utils.list_without_repetitions(iterables.flatten(*elements_s1, lazy=True))
+        flatten_elements_s2 = test_utils.list_without_repetitions(iterables.flatten(*elements_s2, lazy=True))
         fs1_minus_fs2 = [element_s1 for element_s1 in flatten_elements_s1 if element_s1 not in flatten_elements_s2]
         fs2_minus_fs1 = [element_s2 for element_s2 in flatten_elements_s2 if element_s2 not in flatten_elements_s1]
+        expected_elements = fs1_minus_fs2 + fs2_minus_fs1
 
-        self.assertEqual(fs1_minus_fs2 + fs2_minus_fs1, list(s1.symmetric_difference(s2)))
+        self.assertEqual(expected_elements, list(s1.symmetric_difference(s2)))
 
         s1.symmetric_difference_update(s2)
-        self.assertEqual(fs1_minus_fs2 + fs2_minus_fs1, list(s1))
+        self.assertEqual(expected_elements, list(s1))
 
     @repeat(REPEAT_TIMES)
     def test_union_union_update_update(self):
         elements_s1 = test_utils.random_collections(random.randint(0, 5))
         elements_s2 = test_utils.random_collections(random.randint(0, 5))
-
-        expected_list = test_utils.list_without_repetitions(
-            iterables.flatten(*elements_s1, lazy=True), iterables.flatten(*elements_s2, lazy=True)
-        )
-
         s1 = OrderedSet(*elements_s1)
         s2 = OrderedSet(*elements_s2)
 
-        self.assertEqual(expected_list, list(s1.union(s2)))
+        expected_elements = test_utils.list_without_repetitions(iterables.flatten(*elements_s1 + elements_s2, lazy=True))
+
+        self.assertEqual(expected_elements, list(s1.union(s2)))
 
         s1.union_update(s2)
-        self.assertEqual(expected_list, list(s1))
+        self.assertEqual(expected_elements, list(s1))
 
         s1 = OrderedSet(*elements_s1)
         s1.update(s2)
-        self.assertEqual(expected_list, list(s1))
+        self.assertEqual(expected_elements, list(s1))

@@ -19,7 +19,7 @@ def random_collections(k=1) -> list:
         (
             *random_elements(random.randint(0, 3)),
             (*random_elements(random.randint(0, 3)),),
-            [*random_elements(random.randint(0, 3))],
+            random_elements(random.randint(0, 3)),
             {*random_elements(random.randint(0, 3))}
         )
     ) for _ in range(k)]
