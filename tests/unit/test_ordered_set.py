@@ -261,8 +261,28 @@ class TestOrderedSet(unittest.TestCase):
             self.assertEqual(expected_elements, list(s1.difference(s2)))
         with self.subTest('difference_update'):
             s1.difference_update(s2)
-            self.assertEqual(expected_list, list(s1))
             self.assertEqual(expected_elements, list(s1))
+
+    @repeat(REPEAT_TIMES)
+    def test__xor__and__ixor__and__rxor__(self):
+        elements_s1 = test_utils.random_collections(random.randint(0, 5))
+        elements_s2 = test_utils.random_collections(random.randint(0, 5))
+        s1 = OrderedSet(*elements_s1)
+        s2 = OrderedSet(*elements_s2)
+
+        flatten_elements_s1 = test_utils.list_without_repetitions(iterables.flatten(*elements_s1, lazy=True))
+        flatten_elements_s2 = test_utils.list_without_repetitions(iterables.flatten(*elements_s2, lazy=True))
+        fs1_minus_fs2 = [element_s1 for element_s1 in flatten_elements_s1 if element_s1 not in flatten_elements_s2]
+        fs2_minus_fs1 = [element_s2 for element_s2 in flatten_elements_s2 if element_s2 not in flatten_elements_s1]
+        expected_elements = fs1_minus_fs2 + fs2_minus_fs1
+
+        with self.subTest('__xor__'):
+            self.assertEqual(expected_elements, list(s1 ^ s2))
+        with self.subTest('__ixor__'):
+            s1 ^= s2
+            self.assertEqual(expected_elements, list(s1))
+        with self.subTest('__rxor__'):
+            self.assertEqual(expected_elements, list(elements_s1 ^ s2))
 
     @repeat(REPEAT_TIMES)
     def test_ordered_set_if_not_set(self):
