@@ -39,16 +39,16 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
         return other | self
 
     def __and__(self, other: Any) -> OrderedSet[E]:
-        # the super implementation reverses the order so the code is the same but reversed to maintain the order
+        # the super implementation reverses the order so this code is the same but reversed to maintain the order
         # noinspection PyUnresolvedReferences
-        return self._from_iterable(value for value in self if value in self.ordered_set_if_not_set(other))
+        return self._from_iterable(value for value in self if value in self.ensure_set(other))
 
     def __iand__(self, other: Any) -> OrderedSet[E]:
         # noinspection PyTypeChecker
-        return super().__iand__(self.ordered_set_if_not_set(other))
+        return super().__iand__(self.ensure_set(other))
 
     def __rand__(self, other: Any) -> OrderedSet[E]:
-        return self.ordered_set_if_not_set(other) & self
+        return self.ensure_ordered_set(other) & self
 
     def __contains__(self, element: Any) -> bool:
         return element in self._elements_dict
@@ -153,14 +153,14 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
 
     def __or__(self, other: Any) -> OrderedSet[E]:
         # noinspection PyTypeChecker
-        return super().__or__(self.ordered_set_if_not_set(other))
+        return super().__or__(self.ensure_set(other))
 
     def __ior__(self, other: Any) -> OrderedSet[E]:
         # noinspection PyTypeChecker
-        return super().__ior__(self.ordered_set_if_not_set(other))
+        return super().__ior__(self.ensure_set(other))
 
     def __ror__(self, other: Any) -> OrderedSet[E]:
-        return self.ordered_set_if_not_set(other) | self
+        return self.ensure_ordered_set(other) | self
 
     def __repr__(self) -> str:
         return str(self)
@@ -173,14 +173,25 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
 
     def __sub__(self, other: Any) -> OrderedSet[E]:
         # noinspection PyTypeChecker
-        return super().__sub__(self.ordered_set_if_not_set(other))
+        return super().__sub__(self.ensure_set(other))
 
     def __isub__(self, other: Any) -> OrderedSet[E]:
         # noinspection PyTypeChecker
-        return super().__isub__(self.ordered_set_if_not_set(other))
+        return super().__isub__(self.ensure_set(other))
 
     def __rsub__(self, other: Any) -> OrderedSet[E]:
-        return self.ordered_set_if_not_set(other) - self
+        return self.ensure_ordered_set(other) - self
+
+    def __xor__(self, other: Any) -> OrderedSet[E]:
+        # noinspection PyTypeChecker
+        return super().__xor__(self.ensure_set(other))
+
+    def __ixor__(self, other: Any) -> OrderedSet[E]:
+        # noinspection PyTypeChecker
+        return super().__ixor__(self.ensure_set(other))
+
+    def __rxor__(self, other: Any) -> OrderedSet[E]:
+        return self.ensure_ordered_set(other) ^ self
 
     def _json_repr(self) -> Any:
         return [json.loads(element.to_json()) if isinstance(element, JSONBASE) else pickle.dumps(element) for element in self]
@@ -221,6 +232,14 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
     def discard_many(self, elements: Iterable):
         for element in elements:
             self.discard(element)
+
+    @classmethod
+    def ensure_ordered_set(cls: Type[T], arg: Any) -> AbstractSet | T:
+        return arg if isinstance(arg, cls) else cls(iterables.flatten(arg, depth=2, lazy=True))
+
+    @classmethod
+    def ensure_set(cls: Type[T], arg: Any) -> AbstractSet | T:
+        return arg if isinstance(arg, AbstractSet) else cls(iterables.flatten(arg, depth=2, lazy=True))
 
     def index(self, element, start=None, stop=None, raise_exception=False) -> int:
         if start is not None or stop is not None:
@@ -269,17 +288,13 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
         self.discard_many(elements_to_delete)
 
     def is_disjoint(self, other) -> bool:
-        return not (self & other)
+        return not self & other
 
     def is_subset(self, other) -> bool:
         return self <= other
 
     def is_superset(self, other) -> bool:
         return self >= other
-
-    @classmethod
-    def ordered_set_if_not_set(cls: Type[T], arg: Any) -> AbstractSet | T:
-        return arg if isinstance(arg, AbstractSet) else cls(iterables.flatten(arg, depth=2, lazy=True))
 
     def pop(self, index=-1) -> E:
         element = self[index]
@@ -309,7 +324,7 @@ class OrderedSet(FlanaBase, MutableSet, Generic[E]):
 
     def symmetric_difference_update(self, *args: Iterable):
         for arg in args:
-            other_minus_self = self.ordered_set_if_not_set(arg) - self
+            other_minus_self = self.ensure_set(arg) - self
             self.difference_update(arg)
             self.update(other_minus_self)
 
