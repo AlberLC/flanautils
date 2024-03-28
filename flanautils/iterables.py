@@ -1,4 +1,5 @@
 import inspect
+import itertools
 import typing
 from typing import Any, Callable, Iterable, Iterator, Sequence, Type, overload
 
@@ -253,13 +254,51 @@ def separate_self_from_args(
     return self, args
 
 
-def shift_function_args(*args, func: Callable = None, first_arg_default: Any = None) -> tuple:
+def shift_function_args(*args, func: Callable = None, n_positions=1) -> tuple:
     """
-    Shift received arguments one position to the right, taking into account the possible default value of the first
+    Shift the received arguments n_positions to the right, taking into account the possible default value of every
     argument.
+
+    >>> def something(x: Any = 9, y: Any = 'hello', z: Any = None):
+    ...     print(x, y, z)
+
+    >>> shift_function_args(1, func=something)
+    (9, 1)
+    >>> shift_function_args(1, 2, func=something)
+    (9, 1, 2)
+    >>> shift_function_args(1, 2, 3, func=something)
+    (9, 1, 2)
+
+    >>> shift_function_args(1, func=something, n_positions=2)
+    (9, 'hello', 1)
+    >>> shift_function_args(1, 2, func=something, n_positions=2)
+    (9, 'hello', 1)
+    >>> shift_function_args(1, 2, 3, func=something, n_positions=2)
+    (9, 'hello', 1)
+
+    >>> shift_function_args(1, func=something, n_positions=3)
+    (9, 'hello', None)
+    >>> shift_function_args(1, 2, func=something, n_positions=3)
+    (9, 'hello', None)
+    >>> shift_function_args(1, 2, 3, func=something, n_positions=3)
+    (9, 'hello', None)
+
+    >>> shift_function_args(1, func=something, n_positions=99)
+    (9, 'hello', None)
+    >>> shift_function_args(1, 2, func=something, n_positions=99)
+    (9, 'hello', None)
+    >>> shift_function_args(1, 2, 3, func=something, n_positions=99)
+    (9, 'hello', None)
     """
 
-    if isinstance(func, Callable):
-        first_arg_default = next(iter(inspect.signature(func).parameters.values())).default
+    if func:
+        first_arg_defaults = (
+            None if parameter.default is inspect.Parameter.empty else parameter.default
+            for parameter in inspect.signature(func).parameters.values()
+        )
+    else:
+        first_arg_defaults = itertools.cycle((None,))
 
-    return None if first_arg_default is inspect.Parameter.empty else first_arg_default, *args
+    new_args = [default for _, default in zip(range(n_positions), first_arg_defaults)]
+    n_parameters = len(inspect.signature(func).parameters)
+    return tuple(new_args + list(args)[:n_parameters - len(new_args)])

@@ -19,7 +19,7 @@ def is_function(func: Any) -> bool:
 # --------------------------------------------------------- #
 # -------------------- META DECORATORS -------------------- #
 # --------------------------------------------------------- #
-def shift_args_if_called(func_: Callable = None, *, exclude_self_types: str | Type | Iterable[str | Type] = (), globals_: dict = None) -> Callable:
+def shift_args_if_called(func_: Callable = None, *, n_positions=1, exclude_self_types: str | Type | Iterable[str | Type] = (), globals_: dict = None) -> Callable:
     """Decorator for decorators that shifts the arguments depending on whether the decorator is called or not."""
 
     if func_ is not None and not is_function(func_):
@@ -30,7 +30,7 @@ def shift_args_if_called(func_: Callable = None, *, exclude_self_types: str | Ty
         def wrapper(*args, **kwargs):
             self, args = iterables.separate_self_from_args(args, exclude_self_types, globals_)
             if args and args[0] is not None and not is_function(args[0]):
-                args = iterables.shift_function_args(*args, func=func)
+                args = iterables.shift_function_args(*args, n_positions=n_positions, func=func)
 
             if self:
                 return func(self, *args, **kwargs)
