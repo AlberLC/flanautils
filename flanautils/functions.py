@@ -1,12 +1,16 @@
 import asyncio
 import functools
 import inspect
+import itertools
 import timeit
 from typing import Any, Callable, Iterable, Type
 
-from flanautils import iterables
+from flanautils import strings
 
 
+# --------------------------------------------------- #
+# -------------------- FUNCTIONS -------------------- #
+# --------------------------------------------------- #
 def is_function(func: Any) -> bool:
     """Checks if the func object is considered a function."""
 
@@ -16,6 +20,81 @@ def is_function(func: Any) -> bool:
     return inspect.isfunction(func) or inspect.ismethod(func)
 
 
+def separate_self_from_args(
+    args: tuple,
+    exclude_self_types: str | Type | Iterable[str | Type],
+    globals_: dict = None
+) -> tuple[Any, tuple]:
+    """
+    Given a function arguments iterable: if the first arg is an instance of exclude_self_types return (args[0],
+    args[1:]), else (None, args[1:]).
+
+    If exclude_self_types is a string or iterable of strings, strings.str_to_class(exclude_self_types, globals_)
+    is called.
+    """
+
+    match exclude_self_types:
+        case str() | [*_, str()]:
+            exclude_self_types = strings.str_to_class(exclude_self_types, globals_)
+
+    if args and isinstance(args[0], exclude_self_types):
+        self, *args = args
+    else:
+        self = None
+
+    return self, args
+
+
+def shift_function_args(*args, func: Callable = None, n_positions=1) -> tuple:
+    """
+    Shift the received arguments n_positions to the right, taking into account the possible default value of every
+    argument.
+
+    >>> def something(x: Any = 9, y: Any = 'hello', z: Any = None):
+    ...     print(x, y, z)
+
+    >>> shift_function_args(1, func=something)
+    (9, 1)
+    >>> shift_function_args(1, 2, func=something)
+    (9, 1, 2)
+    >>> shift_function_args(1, 2, 3, func=something)
+    (9, 1, 2)
+
+    >>> shift_function_args(1, func=something, n_positions=2)
+    (9, 'hello', 1)
+    >>> shift_function_args(1, 2, func=something, n_positions=2)
+    (9, 'hello', 1)
+    >>> shift_function_args(1, 2, 3, func=something, n_positions=2)
+    (9, 'hello', 1)
+
+    >>> shift_function_args(1, func=something, n_positions=3)
+    (9, 'hello', None)
+    >>> shift_function_args(1, 2, func=something, n_positions=3)
+    (9, 'hello', None)
+    >>> shift_function_args(1, 2, 3, func=something, n_positions=3)
+    (9, 'hello', None)
+
+    >>> shift_function_args(1, func=something, n_positions=99)
+    (9, 'hello', None)
+    >>> shift_function_args(1, 2, func=something, n_positions=99)
+    (9, 'hello', None)
+    >>> shift_function_args(1, 2, 3, func=something, n_positions=99)
+    (9, 'hello', None)
+    """
+
+    if func:
+        first_arg_defaults = (
+            None if parameter.default is inspect.Parameter.empty else parameter.default
+            for parameter in inspect.signature(func).parameters.values()
+        )
+    else:
+        first_arg_defaults = itertools.cycle((None,))
+
+    new_args = [default for _, default in zip(range(n_positions), first_arg_defaults)]
+    n_parameters = len(inspect.signature(func).parameters)
+    return tuple(new_args + list(args)[:n_parameters - len(new_args)])
+
+
 # --------------------------------------------------------- #
 # -------------------- META DECORATORS -------------------- #
 # --------------------------------------------------------- #
@@ -23,14 +102,14 @@ def shift_args_if_called(func_: Callable = None, *, n_positions=1, exclude_self_
     """Decorator for decorators that shifts the arguments depending on whether the decorator is called or not."""
 
     if func_ is not None and not is_function(func_):
-        func_, exclude_self_types, globals_ = iterables.shift_function_args(func_, exclude_self_types, globals_, func=shift_args_if_called)
+        func_, exclude_self_types, globals_ = shift_function_args(func_, exclude_self_types, globals_, func=shift_args_if_called)
 
     def decorator(func: Callable):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            self, args = iterables.separate_self_from_args(args, exclude_self_types, globals_)
+            self, args = separate_self_from_args(args, exclude_self_types, globals_)
             if args and args[0] is not None and not is_function(args[0]):
-                args = iterables.shift_function_args(*args, n_positions=n_positions, func=func)
+                args = shift_function_args(*args, n_positions=n_positions, func=func)
 
             if self:
                 return func(self, *args, **kwargs)
@@ -81,7 +160,7 @@ def return_if_first_empty(func_: Callable = None, /, return_: Any = None, exclud
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> Any:
-            self, args = iterables.separate_self_from_args(args, exclude_self_types, globals_)
+            self, args = separate_self_from_args(args, exclude_self_types, globals_)
 
             if not args[0] if args else not next(iter(kwargs.values()), None):
                 if asyncio.iscoroutinefunction(func):

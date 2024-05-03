@@ -1,7 +1,5 @@
-import inspect
-import itertools
 import typing
-from typing import Any, Callable, Iterable, Iterator, Sequence, Type, overload
+from typing import Any, Callable, Iterable, Iterator, Sequence, overload
 
 from flanautils import maths, strings
 
@@ -227,78 +225,3 @@ def iterate_n(iterable: Iterable, n: int, default: Any = ...) -> Any | None:
         iterate()
 
     return iterate()
-
-
-def separate_self_from_args(
-    args: tuple,
-    exclude_self_types: str | Type | Iterable[str | Type],
-    globals_: dict = None
-) -> tuple[Any, tuple]:
-    """
-    Given a function arguments iterable: if the first arg is an instance of exclude_self_types return (args[0],
-    args[1:]), else (None, args[1:]).
-
-    If exclude_self_types is a string or iterable of strings, strings.str_to_class(exclude_self_types, globals_)
-    is called.
-    """
-
-    match exclude_self_types:
-        case str() | [*_, str()]:
-            exclude_self_types = strings.str_to_class(exclude_self_types, globals_)
-
-    if args and isinstance(args[0], exclude_self_types):
-        self, *args = args
-    else:
-        self = None
-
-    return self, args
-
-
-def shift_function_args(*args, func: Callable = None, n_positions=1) -> tuple:
-    """
-    Shift the received arguments n_positions to the right, taking into account the possible default value of every
-    argument.
-
-    >>> def something(x: Any = 9, y: Any = 'hello', z: Any = None):
-    ...     print(x, y, z)
-
-    >>> shift_function_args(1, func=something)
-    (9, 1)
-    >>> shift_function_args(1, 2, func=something)
-    (9, 1, 2)
-    >>> shift_function_args(1, 2, 3, func=something)
-    (9, 1, 2)
-
-    >>> shift_function_args(1, func=something, n_positions=2)
-    (9, 'hello', 1)
-    >>> shift_function_args(1, 2, func=something, n_positions=2)
-    (9, 'hello', 1)
-    >>> shift_function_args(1, 2, 3, func=something, n_positions=2)
-    (9, 'hello', 1)
-
-    >>> shift_function_args(1, func=something, n_positions=3)
-    (9, 'hello', None)
-    >>> shift_function_args(1, 2, func=something, n_positions=3)
-    (9, 'hello', None)
-    >>> shift_function_args(1, 2, 3, func=something, n_positions=3)
-    (9, 'hello', None)
-
-    >>> shift_function_args(1, func=something, n_positions=99)
-    (9, 'hello', None)
-    >>> shift_function_args(1, 2, func=something, n_positions=99)
-    (9, 'hello', None)
-    >>> shift_function_args(1, 2, 3, func=something, n_positions=99)
-    (9, 'hello', None)
-    """
-
-    if func:
-        first_arg_defaults = (
-            None if parameter.default is inspect.Parameter.empty else parameter.default
-            for parameter in inspect.signature(func).parameters.values()
-        )
-    else:
-        first_arg_defaults = itertools.cycle((None,))
-
-    new_args = [default for _, default in zip(range(n_positions), first_arg_defaults)]
-    n_parameters = len(inspect.signature(func).parameters)
-    return tuple(new_args + list(args)[:n_parameters - len(new_args)])
