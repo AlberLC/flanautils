@@ -6,6 +6,7 @@ import random
 import re
 import secrets
 import string
+from collections.abc import Iterator
 from typing import Iterable, Type, overload
 
 import jellyfish
@@ -242,7 +243,7 @@ def random_string(min_len=10, max_len=None, letters=True, numbers=True, n_spaces
     return ''.join(secrets.choice(characters) for _ in range(min_len))
 
 
-def remove_accents(text: str, ignore: Iterable = ('ñ', 'ç')) -> str:
+def remove_accents(text: str, ignore: Iterable[str] = ('ñ', 'ç')) -> str:
     """
     Removes the accents from the string.
 
@@ -254,7 +255,7 @@ def remove_accents(text: str, ignore: Iterable = ('ñ', 'ç')) -> str:
     '👉🏻Mañana iba a salir pero el otro dia iba por la calle y casi me atropella un camion 🚛 que iba muy rapido.'
     """
 
-    def remove_accents_generator():
+    def remove_accents_generator() -> Iterator[str]:
         for char in text:
             if char in ignore:
                 yield char
@@ -267,7 +268,7 @@ def remove_accents(text: str, ignore: Iterable = ('ñ', 'ç')) -> str:
     return ''.join(remove_accents_generator())
 
 
-def remove_symbols(text: str, ignore: Iterable = (), replace_with='') -> str:
+def remove_symbols(text: str, ignore: Iterable[str] = (), replace_with='') -> str:
     """
     Remove the typical symbols from the string.
 
