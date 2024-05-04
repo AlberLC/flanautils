@@ -343,10 +343,15 @@ def str_to_class(class_names: str | Type | Iterable[str | Type], globals_: dict)
     """Converts the class or classes names into Python Types found in globals_."""
 
     globals_ = globals_ or {}
-    if isinstance(class_names, str):
-        return globals_[class_names]
-    else:
-        return tuple(globals_[class_name] for class_name in class_names)
+    match class_names:
+        case str(class_name):
+            return globals_[class_name]
+        case Type() as class_:
+            return class_
+        case _:
+            return tuple(
+                globals_[class_name] if isinstance(class_name, str) else class_name for class_name in class_names
+            )
 
 
 def text_to_number(text: str, ignore_no_numbers=True, language='es') -> int | float:
