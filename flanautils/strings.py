@@ -147,6 +147,8 @@ def join_last_separator(elements: Iterable, separator: str, last_separator: str,
 
     >>> join_last_separator(['Uno', 'dos', 'tres', 'cuatro'], ', ', ' y ', '.')
     'Uno, dos, tres y cuatro.'
+    >>> join_last_separator([1, 2, 3, 4], ', ', ' and ', '.')
+    '1, 2, 3 and 4.'
     """
 
     elements = list(elements)
@@ -154,7 +156,7 @@ def join_last_separator(elements: Iterable, separator: str, last_separator: str,
         return ''
     if len(elements) == 1:
         return f'{elements[0]}{final_char}'
-    return f'{separator.join(elements[:-1])}{last_separator}{elements[-1]}{final_char}'
+    return f'{separator.join(str(element) for element in elements[:-1])}{last_separator}{elements[-1]}{final_char}'
 
 
 def numbers_to_text(number: int, language='es') -> str:
