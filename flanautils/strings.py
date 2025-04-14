@@ -6,11 +6,11 @@ import random
 import re
 import secrets
 import string
+import unicodedata
 from collections.abc import Iterator
 from typing import Iterable, Type, overload
 
 import jellyfish
-import unicodedata
 
 from flanautils import constants, iterables
 
@@ -354,7 +354,7 @@ def str_to_class(class_names: str | Type | Iterable[str | Type], globals_: dict)
             )
 
 
-def text_to_number(text: str, ignore_no_numbers=True, language='es') -> int | float:
+def text_to_number(text: str, parse_k=True, ignore_no_numbers=True, language='es') -> int | float:
     """
     Convert numbers from text to numeric and return the sum of them.
 
@@ -376,6 +376,14 @@ def text_to_number(text: str, ignore_no_numbers=True, language='es') -> int | fl
     107
     >>> text_to_number('0.1 + uno más dos, 5.2 -1.1 mas 5.3 -5.8 ')
     6.7
+    >>> text_to_number('hola 5k')
+    5000
+    >>> text_to_number('18 K 500')
+    18500
+    >>> text_to_number('0.1 + uno más dos, 20k 35 k 1 K 1.5K 5.2 -1.1 mas 5.3 -5.8 -12.26k -5.0752 k')
+    40171.5
+    >>> text_to_number('0.1 + uno más dos, 20k 35 k 1 K 1.5K 5.2 -1.1 mas 5.3 -5.8 -12.26k -5.0752 k', parse_k=False)
+    37.6248
     """
 
     text = remove_accents(text)
@@ -386,15 +394,25 @@ def text_to_number(text: str, ignore_no_numbers=True, language='es') -> int | fl
         text = replace(text, {'y': ' ', 'ç': None})
         text = re.sub(r'(([ei]nt[aeio])|(ec))', r'\1 ', text)
         words = text.lower().split()
-        n = 0
+        total = 0
         sign = 1
-        for word in words:
+        for i, word in enumerate(words):
             word = word.strip('.')
+
+            if parse_k:
+                if has_k := word[-1].lower() == 'k':
+                    word = word[:-1]
+                else:
+                    has_k = i + 1 < len(words) and words[i + 1].lower() == 'k'
+            else:
+                has_k = False
+
             try:
-                n += sign * cast_number(word)
+                n = sign * cast_number(word)
             except ValueError:
                 pass
             else:
+                total += n * 1000 if has_k else n
                 continue
 
             if len(word) > constants.TEXT_TO_NUMBER_MAX_WORD_LENGTH:
@@ -409,11 +427,11 @@ def text_to_number(text: str, ignore_no_numbers=True, language='es') -> int | fl
 
             if word_matches := cartesian_product_string_matching(word, number_words_es.values(), constants.NUMBERS_SCORE_MATCHING):
                 number_word = max(word_matches[word].items(), key=lambda item: item[1])[0]
-                n += sign * number_words_es[number_word]
+                total += sign * number_words_es[number_word]
             elif not ignore_no_numbers:
                 raise KeyError(word)
 
-        return n
+        return total
 
     raise NotImplementedError('not implemented for that language')
 
