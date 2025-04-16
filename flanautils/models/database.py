@@ -1,7 +1,9 @@
+import math
 import os
 
 import pymongo
 
+from flanautils import constants
 from flanautils.models import MongoBase
 
 mongo_client = None
@@ -26,3 +28,10 @@ def init_database(reload=False):
     if database_name := os.environ.get('DATABASE_NAME'):
         database = mongo_client[database_name]
         MongoBase.init_database_attributes(database)
+
+
+def validate_mongodb_number(number: int | float) -> bool:
+    if isinstance(number, int):
+        return constants.MONGODB_INT64_MIN <= number <= constants.MONGODB_INT64_MAX
+    else:
+        return math.isfinite(number)

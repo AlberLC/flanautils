@@ -10,6 +10,8 @@ GOOGLE_BOT_USER_AGENTS = [
     "Googlebot/2.1 (+http://www.googlebot.com/bot.html)",
     "Googlebot/2.1 (+http://www.google.com/bot.html)"
 ]
+MONGODB_INT64_MAX = 2 ** 63 - 1
+MONGODB_INT64_MIN = - 2 ** 63
 NUMBER_WORDS = {
     'es': BiDict({
         '+': 'mas',
