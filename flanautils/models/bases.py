@@ -14,6 +14,7 @@ from types import NoneType
 from typing import AbstractSet, Any, Iterable, Iterator, Sequence
 
 import pymongo
+import pymongo.collection
 import pymongo.database
 import pymongo.results
 from bson import ObjectId
