@@ -16,6 +16,9 @@ async def _do(
 ) -> Any:
     """Execute the function whether it is asynchronous or not."""
 
+    if not isinstance(exceptions_to_capture, Iterable):
+        exceptions_to_capture = (exceptions_to_capture,)
+
     try:
         return await result if inspect.isawaitable(result := func(*args, **kwargs)) else result
     except (*exceptions_to_capture,) as e:
