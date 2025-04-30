@@ -77,6 +77,8 @@ class DictBase:
                 except (IndexError, TypeError):
                     value_type = type
 
+                type_ = type_origin or type_
+
                 match v:
                     case dict() if issubclass(type_, DictBase) and lazy:
                         continue
