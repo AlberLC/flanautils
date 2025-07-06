@@ -3,6 +3,7 @@ from collections.abc import Iterable, Sequence
 from enum import Enum, auto
 
 import cv2
+import mouse
 import mss
 import mss.base
 import mss.screenshot
@@ -107,7 +108,7 @@ def get_all_positions_in_image(
 def get_all_positions_in_screen(
     sub_images: str | pathlib.Path | numpy.ndarray | Iterable[str | pathlib.Path | numpy.ndarray],
     mask: str | pathlib.Path | numpy.ndarray = None,
-    region: Sequence[int, int, int, int] = None,
+    region: Sequence[int] = None,
     confidence=1.0,
     center=False,
     region_relative_coordinates=False,
@@ -127,11 +128,43 @@ def get_center(x: int, y: int, width: int, height: int) -> tuple[int, int]:
     return x + round(width / 2), y + round(height / 2)
 
 
+def get_pixel_color(
+    position: Sequence[int],
+    image: str | pathlib.Path | numpy.ndarray | None = None
+) -> tuple[int, int, int]:
+    if image:
+        image = to_ndarray(image)
+    else:
+        image, _ = get_screenshot((*position, position[0] + 1, position[1] + 1))
+
+    image = image.astype(numpy.uint16)
+
+    # noinspection PyTypeChecker
+    return tuple(int(number) for number in image[0][0])
+
+
+def get_region_color_mean(region: Sequence[int]) -> tuple[int, int, int]:
+    image, _ = get_screenshot(region)
+    image = image.astype(numpy.uint16)
+
+    red_sum = (image ** 2)[:, :, 0].sum(dtype=numpy.uint64)
+    green_sum = (image ** 2)[:, :, 1].sum(dtype=numpy.uint64)
+    blue_sum = (image ** 2)[:, :, 2].sum(dtype=numpy.uint64)
+
+    n_pixels = image.shape[0] * image.shape[1]
+
+    return (
+        round((red_sum / n_pixels) ** (1 / 2)),
+        round((green_sum / n_pixels) ** (1 / 2)),
+        round((blue_sum / n_pixels) ** (1 / 2))
+    )
+
+
 def get_screenshot(
-    region: Sequence[int, int, int, int] = None,
+    region: Sequence[int] = None,
     capturer: mss.base.MSSBase = None
 ) -> tuple[numpy.ndarray, tuple[int, int]]:
-    def get_mss_region(capturer_: mss.base.MSSBase, region_: Sequence[int, int, int, int] = None) -> dict[str, int]:
+    def get_mss_region(capturer_: mss.base.MSSBase, region_: Sequence[int] = None) -> dict[str, int]:
         if region_:
             return {
                 "left": region_[0],
@@ -144,7 +177,7 @@ def get_screenshot(
 
     def grab(
         capturer_: mss.base.MSSBase,
-        region_: Sequence[int, int, int, int]
+        region_: Sequence[int]
     ) -> tuple[mss.screenshot.ScreenShot, dict[str, int]]:
         mss_region_ = get_mss_region(capturer_, region_)
         return capturer_.grab(mss_region_), mss_region_
@@ -155,15 +188,16 @@ def get_screenshot(
         with mss.mss() as capturer:
             screenshot, mss_region = grab(capturer, region)
 
+    # noinspection PyUnboundLocalVariable
     return to_ndarray(screenshot), (mss_region['left'], mss_region['top'])
 
 
 def is_region_color(
-    region: Sequence[int, int, int, int],
+    region: Sequence[int],
     target_color: tuple[int, int, int],
     tolerance: int
 ) -> bool:
-    color = region_color_mean(region)
+    color = get_region_color_mean(region)
     return (
         abs(target_color[0] - color[0]) < tolerance
         and
@@ -188,23 +222,6 @@ def match(
     return cv2.matchTemplate(image, sub_image, cv2.TM_CCOEFF_NORMED, **kwargs)
 
 
-def region_color_mean(region: Sequence[int, int, int, int]) -> tuple[int, int, int]:
-    image, _ = get_screenshot(region)
-    image = image.astype(numpy.uint16)
-
-    red_sum = (image ** 2)[:, :, 0].sum(dtype=numpy.uint64)
-    green_sum = (image ** 2)[:, :, 1].sum(dtype=numpy.uint64)
-    blue_sum = (image ** 2)[:, :, 2].sum(dtype=numpy.uint64)
-
-    n_pixels = image.shape[0] * image.shape[1]
-
-    return (
-        round((red_sum / n_pixels) ** (1 / 2)),
-        round((green_sum / n_pixels) ** (1 / 2)),
-        round((blue_sum / n_pixels) ** (1 / 2))
-    )
-
-
 def search_in_image(
     sub_image: str | pathlib.Path | numpy.ndarray,
     image: str | pathlib.Path | numpy.ndarray,
@@ -227,7 +244,7 @@ def search_in_image(
 def search_in_screen(
     sub_image: str | pathlib.Path | numpy.ndarray,
     mask: str | pathlib.Path | numpy.ndarray = None,
-    region: Sequence[int, int, int, int] = None,
+    region: Sequence[int] = None,
     confidence=1.0,
     center=False,
     region_relative_coordinates=False
@@ -248,11 +265,38 @@ def search_in_screen(
     return point, image
 
 
+def show_image(image: str | pathlib.Path | numpy.ndarray) -> None:
+    image = to_ndarray(image)
+    cv2.imshow('Image', image)
+    cv2.waitKey(0)
+
+
 def to_ndarray(image: str | pathlib.Path | mss.screenshot.ScreenShot | numpy.ndarray) -> numpy.ndarray:
     match image:
         case str() | pathlib.Path():
             image = cv2.imread(str(image))
         case mss.screenshot.ScreenShot():
             image = numpy.array(image)
+
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
     return image[:, :, :3]
+
+
+def track_mouse_coordinates(screen_width: int = 1920, screen_height: int = 1080) -> None:
+    def on_left_press():
+        x, y = mouse.get_position()
+        ratio = (round(x / screen_width, 5), round(y / screen_height, 5))
+        color = get_pixel_color((x, y))
+        print(f'Position: {str((x, y)):<20}Ratio: {str(ratio):<25}RGB: {color}')
+
+    def on_middle_press():
+        print()
+
+    mouse.on_button(on_left_press, buttons=mouse.LEFT, types=(mouse.DOWN, mouse.DOUBLE))
+    mouse.on_button(on_middle_press, buttons=mouse.MIDDLE, types=(mouse.DOWN, mouse.DOUBLE))
+
+    try:
+        input('Haz clic para imprimir la posición del ratón. Pulsa el botón central para añadir una línea. Pulsa Enter para detener el rastreo...\n')
+    finally:
+        mouse.unhook_all()
