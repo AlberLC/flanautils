@@ -93,7 +93,11 @@ def get_all_positions_in_image(
         all_points = numpy.concatenate((all_points, points))
 
     _swap_axis_in_place(all_points)
-    all_points = numpy.core.records.fromarrays(all_points.transpose(), names='x, y, confidence', formats='int, int, float')
+    all_points = numpy.core.records.fromarrays(
+        all_points.transpose(),
+        names='x, y, confidence',
+        formats='int, int, float'
+    )
 
     if sort_by != [SortBy.Y, SortBy.X, SortBy.CONFIDENCE]:
         all_points.sort(order=[category.name.lower() for category in sort_by])
