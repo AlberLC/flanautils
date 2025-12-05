@@ -15,7 +15,7 @@ class TimeUnits(FlanaBase):
     """
     Represents the time information grouping it into typical units.
 
-    You can represent that tense in textual form according to the language.
+    You can represent that time in textual form according to the language.
 
     >>> TimeUnits(hours=1000)
     TimeUnits(years=0, months=1, weeks=1, days=4, hours=5, minutes=59, seconds=58.847999999838976)
