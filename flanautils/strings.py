@@ -6,11 +6,11 @@ import random
 import re
 import secrets
 import string
-import unicodedata
 from collections.abc import Iterator
 from typing import Iterable, Type, overload
 
 import jellyfish
+import unicodedata
 
 from flanautils import constants, iterables
 
@@ -400,7 +400,7 @@ def text_to_number(text: str, parse_k=True, ignore_no_numbers=True, language='es
             word = word.strip('.')
 
             if parse_k:
-                if has_k := word[-1].lower() == 'k':
+                if word and (has_k := word[-1].lower() == 'k'):
                     word = word[:-1]
                 else:
                     has_k = i + 1 < len(words) and words[i + 1].lower() == 'k'
