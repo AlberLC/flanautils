@@ -105,13 +105,16 @@ get_request = functools.partial(request, HTTPMethod.GET)
 post_request = functools.partial(request, HTTPMethod.POST)
 
 
-async def resolve_real_url(url: str, headers=None) -> str:
+async def resolve_real_url(url: str, headers=None, use_google_bot_user_agent=False) -> str:
     """Gets the final url after the redirects."""
 
     if match := re.search(r'\[.*?]\((.*?)\)', url):
         url = match.group(1)
 
     if headers is None:
-        headers = {'User-Agent': random.choice(constants.GOOGLE_BOT_USER_AGENTS)}
+        if use_google_bot_user_agent:
+            headers = {'User-Agent': random.choice(constants.GOOGLE_BOT_USER_AGENTS)}
+        else:
+            headers = {}
 
     return str((await get_request(url, headers=headers, return_response=True)).url)
