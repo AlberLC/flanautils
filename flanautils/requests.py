@@ -65,7 +65,7 @@ async def request(
     if params:
         params = {str(k): str(v) for k, v in params.items()}
 
-    session_ = session or aiohttp.ClientSession()
+    session_ = session or aiohttp.ClientSession(max_field_size=16380)
 
     try:
         if http_method is HTTPMethod.GET:
@@ -92,7 +92,7 @@ async def request(
                             return await response.text()
                     else:
                         return await response.read()
-            except aiohttp.client_exceptions.ServerDisconnectedError:
+            except aiohttp.client_exceptions.ClientResponseError, aiohttp.client_exceptions.ServerDisconnectedError:
                 if not attempt:
                     raise
                 await asyncio.sleep(1)
